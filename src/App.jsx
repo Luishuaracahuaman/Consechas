@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { ChevronDown, Play, Shield, ShieldCheck, ChevronLeft, ShoppingCart, Download, Share2, FileText } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown, Play, Shield, ShieldCheck, ChevronLeft, ShoppingCart, Download, Share2, FileText, Menu, X, Star, Bell, MessageSquare, Send } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 export default function App() {
   const [currentView, setCurrentView] = useState('home');
@@ -9,10 +11,20 @@ export default function App() {
   const [checkoutProduct, setCheckoutProduct] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loaderMsg, setLoaderMsg] = useState('');
-  
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   const [toast, setToast] = useState(null);
   const [carrito, setCarrito] = useState([]);
   const [lastOrder, setLastOrder] = useState(null);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatTarget, setChatTarget] = useState(null);
+
+  const notificaciones = [
+    { id: 1, text: "Se ha bloqueado 1,500 USDT en tu contrato de Cacao", time: "Hace 5 min", unread: true },
+    { id: 2, text: "El productor Fundo San Vicente ha enviado tu cosecha", time: "Hace 1 hora", unread: true },
+    { id: 3, text: "Contrato inteligente auditado con éxito", time: "Hace 1 día", unread: false }
+  ];
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -22,6 +34,7 @@ export default function App() {
   const navigate = (view) => {
     setLoading(true);
     setLoaderMsg('Conectando a la Blockchain...');
+    setMobileMenuOpen(false);
     setTimeout(() => {
       setCurrentView(view);
       setLoading(false);
@@ -69,12 +82,10 @@ export default function App() {
       )}
 
       {toast && (
-        <div className={`fixed top-5 right-5 z-[10000] p-4 rounded-xl shadow-2xl border flex items-center gap-3 animate-in slide-in-from-right-8 duration-300 ${
-          toast.type === 'success' ? 'bg-panel border-success text-white' : 'bg-panel border-red-500 text-white'
-        }`}>
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg shadow-inner ${
-            toast.type === 'success' ? 'bg-success/20 text-success' : 'bg-red-500/20 text-red-500'
+        <div className={`fixed top-5 right-5 z-[10000] p-4 rounded-xl shadow-2xl border flex items-center gap-3 animate-in slide-in-from-right-8 duration-300 ${toast.type === 'success' ? 'bg-panel border-success text-white' : 'bg-panel border-red-500 text-white'
           }`}>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg shadow-inner ${toast.type === 'success' ? 'bg-success/20 text-success' : 'bg-red-500/20 text-red-500'
+            }`}>
             {toast.type === 'success' ? '✓' : '⚠'}
           </div>
           <p className="font-semibold text-sm pr-4">{toast.message}</p>
@@ -82,46 +93,96 @@ export default function App() {
         </div>
       )}
 
-      <nav className="flex justify-between items-center px-10 py-4 bg-dark border-b border-border sticky top-0 z-50">
-        <div className="flex items-center gap-8">
-          <div className="flex items-center gap-2 font-bold text-lg text-primary cursor-pointer" onClick={() => navigate('home')}>
-            <span>🔶</span>
-            <span>AgriChain</span>
+      <nav className="flex justify-between items-center px-4 md:px-10 py-4 bg-dark border-b border-border sticky top-0 z-50">
+        <div className="flex items-center gap-4 md:gap-8">
+          <div className="flex items-center cursor-pointer -ml-6 md:-ml-12" onClick={() => navigate('home')}>
+            <img src="/logo_transparent.png" alt="TerraTrust Logo" className="h-14 md:h-24 w-auto object-contain scale-[1.4] origin-left drop-shadow-md" />
           </div>
-          <ul className="flex list-none gap-5 text-sm font-medium">
-            <li><button onClick={() => navigate('market')} className="hover:text-primary transition-colors">Comprar Cosechas</button></li>
-            <li><button onClick={() => navigate('farmer')} className="hover:text-primary transition-colors">Panel Productor</button></li>
-            <li><button onClick={() => navigate('cart')} className="hover:text-primary transition-colors text-primary flex items-center gap-1">🛒 Mi Carrito</button></li>
+
+          <button className="md:hidden ml-auto text-white p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            {mobileMenuOpen ? <X /> : <Menu />}
+          </button>
+
+          <ul className={`absolute md:static top-full left-0 w-full md:w-auto bg-dark md:bg-transparent border-b md:border-b-0 border-border p-4 md:p-0 flex-col md:flex-row list-none gap-5 text-sm font-medium ${mobileMenuOpen ? 'flex' : 'hidden md:flex'}`}>
+            <li><button onClick={() => navigate('market')} className="hover:text-primary transition-colors">Mercado</button></li>
+            <li><button onClick={() => navigate('farmer')} className="hover:text-primary transition-colors">Productor</button></li>
+            <li><button onClick={() => navigate('cart')} className="hover:text-primary transition-colors text-primary flex items-center gap-1">🛒 Carrito</button></li>
             <li><button onClick={() => navigate('tracking')} className="hover:text-primary transition-colors">Mis Pedidos</button></li>
           </ul>
         </div>
-        <div className="flex items-center gap-8">
+        <div className="hidden md:flex items-center gap-8 relative">
+
+          {/* Notificaciones */}
+          <div className="relative">
+            <button onClick={() => setNotificationsOpen(!notificationsOpen)} className="text-muted hover:text-white transition-colors relative">
+              <Bell size={24} />
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-dark"></span>
+            </button>
+
+            <AnimatePresence>
+              {notificationsOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  className="absolute right-0 mt-4 w-80 bg-panel border border-border rounded-xl shadow-2xl overflow-hidden z-50"
+                >
+                  <div className="p-4 border-b border-border bg-dark">
+                    <h3 className="font-bold text-white">Notificaciones</h3>
+                  </div>
+                  <div className="max-h-80 overflow-y-auto">
+                    {notificaciones.map(n => (
+                      <div key={n.id} className={`p-4 border-b border-border hover:bg-dark cursor-pointer transition-colors ${n.unread ? 'bg-primary/5' : ''}`}>
+                        <p className="text-sm text-white mb-1">{n.text}</p>
+                        <p className="text-xs text-muted font-medium">{n.time}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="p-3 text-center bg-dark">
+                    <button className="text-sm text-primary hover:underline">Marcar todas como leídas</button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
           <span className="bg-panel px-3 py-1 rounded text-sm border border-border flex items-center gap-2">
             <span className="w-2 h-2 bg-success rounded-full inline-block"></span>
             Polygon
           </span>
-          <button 
+          <button
             onClick={!isWalletConnected ? () => setWalletModalOpen(true) : disconnectWallet}
-            className={`font-semibold py-2 px-5 rounded transition-colors ${
-              isWalletConnected 
-                ? 'bg-border text-primary border border-primary hover:bg-red-900/30 hover:text-red-400 hover:border-red-500' 
-                : 'bg-primary text-black hover:bg-primary-hover'
-            }`}
+            className={`font-semibold py-2 px-5 rounded transition-colors ${isWalletConnected
+              ? 'bg-border text-primary border border-primary hover:bg-red-900/30 hover:text-red-400 hover:border-red-500'
+              : 'bg-primary text-black hover:bg-primary-hover'
+              }`}
             title={isWalletConnected ? 'Clic para desconectar' : ''}
           >
             {isWalletConnected ? '🦊 0x71C...9A23' : 'Conectar Wallet'}
           </button>
         </div>
       </nav>
+      {/* Botón flotante para conectar en móvil */}
+      <div className="md:hidden fixed bottom-4 right-4 z-40">
+        <button
+          onClick={!isWalletConnected ? () => setWalletModalOpen(true) : disconnectWallet}
+          className={`font-bold py-3 px-4 rounded-full shadow-2xl flex items-center gap-2 ${isWalletConnected
+            ? 'bg-dark text-primary border border-primary'
+            : 'bg-primary text-black'
+            }`}
+        >
+          {isWalletConnected ? '🦊 0x71C...' : 'Wallet'}
+        </button>
+      </div>
 
       <main className="flex-grow">
         {currentView === 'home' && <HomeView navigate={navigate} />}
         {currentView === 'farmer' && <FarmerView isWalletConnected={isWalletConnected} showToast={showToast} />}
-        {currentView === 'market' && <MarketView goToCheckout={goToCheckout} navigate={navigate} carrito={carrito} setCarrito={setCarrito} showToast={showToast} />}
+        {currentView === 'market' && <MarketView goToCheckout={goToCheckout} navigate={navigate} carrito={carrito} setCarrito={setCarrito} showToast={showToast} setChatOpen={setChatOpen} setChatTarget={setChatTarget} />}
         {currentView === 'checkout' && checkoutProduct && (
-          <CheckoutView 
-            product={checkoutProduct} 
-            navigate={navigate} 
+          <CheckoutView
+            product={checkoutProduct}
+            navigate={navigate}
             setLoading={setLoading}
             setLoaderMsg={setLoaderMsg}
             showToast={showToast}
@@ -137,8 +198,8 @@ export default function App() {
           <div className="bg-panel border border-border rounded-lg max-w-sm w-full p-6 relative shadow-2xl" onClick={e => e.stopPropagation()}>
             <button className="absolute top-4 right-4 text-muted hover:text-white" onClick={() => setWalletModalOpen(false)}>✕</button>
             <h3 className="text-xl font-bold mb-2">Conectar Wallet</h3>
-            <p className="text-sm text-muted mb-6">Selecciona el proveedor para conectarte a AgriChain.</p>
-            
+            <p className="text-sm text-muted mb-6">Selecciona el proveedor para conectarte a TerraTrust.</p>
+
             <div className="flex flex-col gap-3">
               <button onClick={() => connectWallet('MetaMask')} className="flex items-center gap-4 bg-dark border border-border p-4 rounded hover:border-primary transition-colors text-left font-semibold group">
                 <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-xl shadow-lg">🦊</div>
@@ -165,7 +226,7 @@ export default function App() {
             </div>
             <h3 className="text-xl font-bold mb-2">¿Desconectar Wallet?</h3>
             <p className="text-sm text-muted mb-6">Si te desconectas, no podrás realizar compras ni firmar contratos hasta volver a conectarte.</p>
-            
+
             <div className="flex gap-3">
               <button onClick={() => setDisconnectModalOpen(false)} className="flex-1 bg-dark border border-border text-white font-semibold py-3 rounded hover:bg-border transition-colors">
                 Cancelar
@@ -177,6 +238,54 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* CHAT P2P FLOTANTE */}
+      <AnimatePresence>
+        {chatOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 50, scale: 0.9 }}
+            className="fixed bottom-4 md:bottom-6 right-4 md:right-6 w-[90vw] md:w-96 bg-panel border border-border rounded-2xl shadow-2xl z-[9999] flex flex-col overflow-hidden"
+          >
+            <div className="bg-dark p-4 border-b border-border flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-primary/20 text-primary rounded-full flex items-center justify-center text-lg shadow-inner">
+                  🧑‍🌾
+                </div>
+                <div>
+                  <h4 className="font-bold text-white text-sm leading-tight">{chatTarget || 'Productor'}</h4>
+                  <p className="text-xs text-success flex items-center gap-1"><span className="w-2 h-2 bg-success rounded-full inline-block"></span> En línea (P2P Seguro)</p>
+                </div>
+              </div>
+              <button onClick={() => setChatOpen(false)} className="text-muted hover:text-white transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="h-72 bg-[#0b0e11] p-4 flex flex-col gap-4 overflow-y-auto">
+              <div className="self-center bg-dark text-muted text-[10px] uppercase tracking-widest px-3 py-1 rounded-full border border-border">
+                Conexión cifrada de extremo a extremo
+              </div>
+              <div className="self-start max-w-[80%] bg-dark border border-border p-3 rounded-2xl rounded-tl-sm shadow-sm">
+                <p className="text-sm text-white">Hola, soy el productor de {chatTarget}. ¿Estás interesado en un volumen específico o quieres negociar el precio?</p>
+                <p className="text-[10px] text-muted text-right mt-1">10:45 AM</p>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-border bg-dark flex gap-2">
+              <input
+                type="text"
+                placeholder="Escribe un mensaje..."
+                className="flex-grow bg-panel border border-border text-white text-sm rounded-full px-4 py-2 focus:outline-none focus:border-primary transition-colors"
+              />
+              <button className="bg-primary text-black p-2.5 rounded-full hover:bg-primary-hover transition-colors shadow-lg shadow-primary/20">
+                <Send size={18} />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -190,16 +299,16 @@ function HomeView({ navigate }) {
 
   return (
     <div className="animate-in fade-in duration-300">
-      <header className="flex justify-between items-center py-20 px-[5%] max-w-7xl mx-auto gap-10">
-        <div className="max-w-[50%]">
-          <h1 className="text-5xl font-extrabold leading-[1.1] mb-5">USA AGRICHAIN<br/>PARA TODO</h1>
-          <p className="text-lg text-main mb-8">Venta directa con Smart Contracts, pagos en USDT, trazabilidad blockchain y cero intermediarios en Cañete y Nuevo Imperial.</p>
-          <div className="flex gap-10 mb-10 text-primary">
-            <div className="flex items-center gap-3">
-              <span className="text-3xl">🏆</span>
+      <header className="flex flex-col md:flex-row justify-between items-center py-10 md:py-20 px-4 md:px-[5%] max-w-7xl mx-auto gap-10">
+        <div className="w-full md:max-w-[50%] text-center md:text-left">
+          <h1 className="text-4xl md:text-5xl font-extrabold leading-[1.1] mb-5">USA TERRATRUST<br />PARA TODO</h1>
+          <p className="text-base md:text-lg text-main mb-8">Venta directa con Smart Contracts, pagos en USDT, trazabilidad blockchain y cero intermediarios en Cañete y Nuevo Imperial.</p>
+          <div className="flex gap-6 md:gap-10 mb-10 text-primary justify-center md:justify-start">
+            <div className="flex items-center gap-2 md:gap-3">
+              <span className="text-2xl md:text-3xl">🏆</span>
               <div>
-                <strong className="block text-lg">No. 1</strong>
-                <p className="text-sm text-main">Contratos Seguros</p>
+                <strong className="block text-base md:text-lg">No. 1</strong>
+                <p className="text-xs md:text-sm text-main">Contratos Seguros</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -210,28 +319,28 @@ function HomeView({ navigate }) {
               </div>
             </div>
           </div>
-          <div className="flex gap-4">
-            <button onClick={() => navigate('market')} className="bg-primary text-black font-semibold py-3 px-6 rounded hover:bg-primary-hover text-lg">Comienza a comprar hoy</button>
-            <button onClick={() => navigate('farmer')} className="bg-transparent text-primary border border-primary font-semibold py-3 px-6 rounded hover:bg-primary/10 text-lg">Soy Productor</button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+            <button onClick={() => navigate('market')} className="bg-primary text-black font-semibold py-3 px-6 rounded hover:bg-primary-hover text-base md:text-lg">Comienza a comprar hoy</button>
+            <button onClick={() => navigate('farmer')} className="bg-transparent text-primary border border-primary font-semibold py-3 px-6 rounded hover:bg-primary/10 text-base md:text-lg">Soy Productor</button>
           </div>
         </div>
-        <div className="w-[45%]">
+        <div className="w-full md:w-[45%] mt-8 md:mt-0">
           <img src="/hero.png" alt="Agricultor" className="w-full rounded-lg shadow-2xl border border-border" />
         </div>
       </header>
 
-      <section className="bg-[#0b0e11] py-20 px-[5%] border-t border-border">
+      <section className="bg-[#0b0e11] py-10 md:py-20 px-4 md:px-[5%] border-t border-border">
         <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between mb-10 gap-10">
-            <div className="max-w-[45%]">
-              <h2 className="text-4xl font-extrabold leading-[1.1] mb-4">TUS FONDOS Y LOTES<br/>ESTÁN <span className="text-primary">SEGUROS</span></h2>
-              <p className="text-muted text-lg">El Smart Contract retiene los fondos (USDT) hasta que se confirma la recepción física del producto. Eliminamos el riesgo de estafas para el productor y el comprador.</p>
+          <div className="flex flex-col md:flex-row justify-between mb-10 gap-10">
+            <div className="w-full md:max-w-[45%]">
+              <h2 className="text-3xl md:text-4xl font-extrabold leading-[1.1] mb-4 text-center md:text-left">TUS FONDOS Y LOTES<br />ESTÁN <span className="text-primary">SEGUROS</span></h2>
+              <p className="text-muted text-base md:text-lg text-center md:text-left">El Smart Contract retiene los fondos (USDT) hasta que se confirma la recepción física del producto. Eliminamos el riesgo de estafas para el productor y el comprador.</p>
             </div>
-            <div className="max-w-[50%]">
+            <div className="w-full md:max-w-[50%] text-center md:text-left">
               <p className="text-muted text-sm mb-1">Fondos asegurados actualmente en Smart Contracts (Polygon)</p>
-              <h3 className="text-primary text-4xl font-extrabold mb-1">2,500,000 USDT</h3>
+              <h3 className="text-primary text-3xl md:text-4xl font-extrabold mb-1">2,500,000 USDT</h3>
               <p className="font-mono text-muted text-sm mb-5">Contrato Principal: 0x8f...4b2c</p>
-              <div className="flex gap-12">
+              <div className="flex flex-col sm:flex-row gap-6 md:gap-12 justify-center md:justify-start">
                 <div>
                   <h4 className="text-primary text-2xl font-bold">1,250</h4>
                   <p className="text-muted">Productores activos</p>
@@ -243,8 +352,8 @@ function HomeView({ navigate }) {
               </div>
             </div>
           </div>
-          
-          <div className="grid grid-cols-3 gap-5">
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
             {[
               { img: '/hero.png', title: 'Recorriendo los campos' },
               { img: '/uva.png', title: 'Cosecha de Uvas' },
@@ -264,24 +373,24 @@ function HomeView({ navigate }) {
         </div>
       </section>
 
-      <section className="py-20 px-[20%] bg-dark">
-        <h2 className="text-3xl font-bold text-center mb-10">Preguntas Frecuentes</h2>
+      <section className="py-10 md:py-20 px-4 md:px-[20%] bg-dark">
+        <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">Preguntas Frecuentes</h2>
         <div className="flex flex-col gap-4">
           <div className="bg-dark border-b border-border cursor-pointer py-4" onClick={() => toggleFaq(1)}>
-            <div className="flex items-center gap-4 text-lg font-semibold">
-              <div className="bg-panel w-7 h-7 flex items-center justify-center rounded text-sm text-muted">1</div>
-              <span>¿Por qué AgriChain es mejor que un mercado tradicional?</span>
-              <ChevronDown className={`ml-auto text-muted transition-transform duration-300 ${faqOpen === 1 ? 'rotate-180' : ''}`} />
+            <div className="flex items-center gap-3 md:gap-4 text-base md:text-lg font-semibold">
+              <div className="bg-panel w-7 h-7 flex items-center justify-center rounded text-sm text-muted shrink-0">1</div>
+              <span>¿Por qué TerraTrust es mejor que un mercado tradicional?</span>
+              <ChevronDown className={`ml-auto text-muted shrink-0 transition-transform duration-300 ${faqOpen === 1 ? 'rotate-180' : ''}`} />
             </div>
             <div className={`overflow-hidden transition-all duration-300 text-muted pl-11 ${faqOpen === 1 ? 'max-h-40 pt-4 pb-2' : 'max-h-0'}`}>
               Eliminamos a los intermediarios. Usamos tecnología Blockchain para conectar directamente a productores con compradores, garantizando precios justos.
             </div>
           </div>
           <div className="bg-dark border-b border-border cursor-pointer py-4" onClick={() => toggleFaq(2)}>
-            <div className="flex items-center gap-4 text-lg font-semibold">
-              <div className="bg-panel w-7 h-7 flex items-center justify-center rounded text-sm text-muted">2</div>
+            <div className="flex items-center gap-3 md:gap-4 text-base md:text-lg font-semibold">
+              <div className="bg-panel w-7 h-7 flex items-center justify-center rounded text-sm text-muted shrink-0">2</div>
               <span>¿Cómo funcionan los Smart Contracts en la agricultura?</span>
-              <ChevronDown className={`ml-auto text-muted transition-transform duration-300 ${faqOpen === 2 ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`ml-auto text-muted shrink-0 transition-transform duration-300 ${faqOpen === 2 ? 'rotate-180' : ''}`} />
             </div>
             <div className={`overflow-hidden transition-all duration-300 text-muted pl-11 ${faqOpen === 2 ? 'max-h-40 pt-4 pb-2' : 'max-h-0'}`}>
               El comprador deposita el dinero, pero queda bloqueado en el código. Solo se libera a la Wallet del agricultor cuando el producto llega a su destino.
@@ -295,22 +404,23 @@ function HomeView({ navigate }) {
 
 function FarmerView({ isWalletConnected, showToast }) {
   const [lotes, setLotes] = useState([
-    { cultivo: 'Palta Hass', volumen: '500 KG', hash: '0x8f...4b2c', status: 'Pagado' },
-    { cultivo: 'Uva Quebranta', volumen: '1200 KG', hash: '0x3a...9c1f', status: 'Fondos Bloqueados' },
-    { cultivo: 'Manzana Delicia', volumen: '300 KG', hash: '0x7c...2e8d', status: 'Pagado' },
-    { cultivo: 'Limón Sutil', volumen: '800 KG', hash: '0x1b...5a91', status: 'Fondos Bloqueados' }
+    { cultivo: 'Palta Hass (Spot)', volumen: '500 KG', hash: '0x8f...4b2c', status: 'Pagado' },
+    { cultivo: 'Uva Quebranta (Spot)', volumen: '1200 KG', hash: '0x3a...9c1f', status: 'Fondos Bloqueados' },
+    { cultivo: 'Manzana Delicia (Futuro)', volumen: '300 KG', hash: '0x7c...2e8d', status: 'Pagado' },
+    { cultivo: 'Limón Sutil (Spot)', volumen: '800 KG', hash: '0x1b...5a91', status: 'Fondos Bloqueados' }
   ]);
-  const [form, setForm] = useState({ cultivo: '', cantidad: '', precio: '', gps: '' });
+  const [form, setForm] = useState({ cultivo: '', cantidad: '', precio: '', gps: '', tipoVenta: 'Spot', fechaEstimada: '' });
 
   const registrarLote = (e) => {
     e.preventDefault();
     if (!isWalletConnected) {
-      showToast("Conecta tu Wallet arriba a la derecha antes de sellar un lote.", 'error'); 
+      showToast("Conecta tu Wallet arriba a la derecha antes de sellar un lote.", 'error');
       return;
     }
     const fakeHash = "0x" + Math.random().toString(16).substr(2, 8);
-    setLotes([{ cultivo: form.cultivo, volumen: `${form.cantidad} KG`, hash: fakeHash, status: 'Fondos Bloqueados' }, ...lotes]);
-    setForm({ cultivo: '', cantidad: '', precio: '', gps: '' });
+    const nombreLote = `${form.cultivo} (${form.tipoVenta})`;
+    setLotes([{ cultivo: nombreLote, volumen: `${form.cantidad} KG`, hash: fakeHash, status: 'Fondos Bloqueados' }, ...lotes]);
+    setForm({ cultivo: '', cantidad: '', precio: '', gps: '', tipoVenta: 'Spot', fechaEstimada: '' });
     showToast(`Lote de ${form.cultivo} tokenizado en la red Polygon.`);
   };
 
@@ -320,38 +430,66 @@ function FarmerView({ isWalletConnected, showToast }) {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-5 py-10 mt-10 animate-in fade-in duration-300">
-      <h2 className="text-3xl font-bold mb-8 text-primary">Panel del Productor 👨‍🌾</h2>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+    <div className="max-w-7xl mx-auto px-4 md:px-5 py-5 md:py-10 mt-4 md:mt-10 animate-in fade-in duration-300">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <h2 className="text-2xl md:text-3xl font-bold text-primary">Panel del Productor 👨‍🌾</h2>
+        <div className="bg-dark border border-border p-3 rounded-lg flex items-center gap-4">
+          <div>
+            <span className="block text-xs text-muted uppercase tracking-wider">Tu Reputación Global</span>
+            <div className="flex items-center gap-2">
+              <Star className="text-primary fill-primary w-5 h-5" />
+              <span className="text-white font-bold text-xl">4.9</span>
+              <span className="text-muted text-sm">(120 reseñas)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+
         {/* FORMULARIO: Registrar Nuevo Lote */}
         <div className="bg-panel rounded-lg p-6 border border-border lg:col-span-1 shadow-lg">
           <h3 className="text-xl font-semibold mb-6">Registrar Nuevo Lote</h3>
           <form onSubmit={registrarLote} className="flex flex-col gap-4">
             <div>
               <label className="block text-sm text-muted mb-1">Tipo de cultivo</label>
-              <input type="text" placeholder="Ej: Uva Italia" required className="w-full p-3 bg-dark border border-border text-white rounded focus:outline-none focus:border-primary transition-colors" value={form.cultivo} onChange={e => setForm({...form, cultivo: e.target.value})} />
+              <input type="text" placeholder="Ej: Uva Italia" required className="w-full p-3 bg-dark border border-border text-white rounded focus:outline-none focus:border-primary transition-colors" value={form.cultivo} onChange={e => setForm({ ...form, cultivo: e.target.value })} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm text-muted mb-1">Cantidad (KG)</label>
-                <input type="number" placeholder="Ej: 1000" required className="w-full p-3 bg-dark border border-border text-white rounded focus:outline-none focus:border-primary transition-colors" value={form.cantidad} onChange={e => setForm({...form, cantidad: e.target.value})} />
+                <input type="number" placeholder="Ej: 1000" required className="w-full p-3 bg-dark border border-border text-white rounded focus:outline-none focus:border-primary transition-colors" value={form.cantidad} onChange={e => setForm({ ...form, cantidad: e.target.value })} />
               </div>
               <div>
                 <label className="block text-sm text-muted mb-1">Precio (USDT)</label>
-                <input type="number" step="0.01" placeholder="Ej: 150" required className="w-full p-3 bg-dark border border-border text-white rounded focus:outline-none focus:border-primary transition-colors" value={form.precio} onChange={e => setForm({...form, precio: e.target.value})} />
+                <input type="number" step="0.01" placeholder="Ej: 150" required className="w-full p-3 bg-dark border border-border text-white rounded focus:outline-none focus:border-primary transition-colors" value={form.precio} onChange={e => setForm({ ...form, precio: e.target.value })} />
               </div>
             </div>
-            <div>
-              <label className="block text-sm text-muted mb-1">Coordenadas GPS</label>
-              <input type="text" placeholder="Ej: -12.0463, -77.0427" required className="w-full p-3 bg-dark border border-border text-white rounded focus:outline-none focus:border-primary transition-colors" value={form.gps} onChange={e => setForm({...form, gps: e.target.value})} />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm text-muted mb-1">Modalidad</label>
+                <select className="w-full p-3 bg-dark border border-border text-white rounded focus:outline-none focus:border-primary transition-colors" value={form.tipoVenta} onChange={e => setForm({ ...form, tipoVenta: e.target.value })}>
+                  <option value="Spot">Mercado Spot</option>
+                  <option value="Futuro">Venta a Futuro</option>
+                </select>
+              </div>
+              {form.tipoVenta === 'Futuro' ? (
+                <div className="animate-in fade-in zoom-in-95 duration-200">
+                  <label className="block text-sm text-primary font-semibold mb-1">Mes de Cosecha</label>
+                  <input type="month" required className="w-full p-3 bg-dark border border-primary text-white rounded focus:outline-none focus:border-primary transition-colors" value={form.fechaEstimada} onChange={e => setForm({ ...form, fechaEstimada: e.target.value })} />
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm text-muted mb-1">Coordenadas GPS</label>
+                  <input type="text" placeholder="-12.04, -77.04" required className="w-full p-3 bg-dark border border-border text-white rounded focus:outline-none focus:border-primary transition-colors" value={form.gps} onChange={e => setForm({ ...form, gps: e.target.value })} />
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col gap-3 mt-2">
               <button type="submit" className="w-full bg-primary text-black font-bold py-3 rounded hover:bg-primary-hover transition-colors shadow-lg shadow-primary/20">
                 Sellar en Blockchain
               </button>
-              
+
               <button type="button" onClick={subirCertificado} className="w-full flex items-center justify-center gap-2 bg-dark text-muted border border-border font-medium py-3 rounded hover:text-white hover:border-gray-500 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -405,7 +543,7 @@ function FarmerView({ isWalletConnected, showToast }) {
             <div className="relative flex justify-between items-center w-full mx-auto pb-4 px-2">
               <div className="absolute top-5 left-0 w-full h-1 bg-dark border border-border rounded-full z-0"></div>
               <div className="absolute top-5 left-0 w-[33%] h-1 bg-primary rounded-full z-0 transition-all shadow-[0_0_8px_rgba(252,211,77,0.5)]"></div>
-              
+
               <div className="relative z-10 flex flex-col items-center">
                 <div className="w-10 h-10 rounded-full bg-primary text-black flex items-center justify-center font-bold shadow-lg ring-4 ring-panel">
                   <ShieldCheck size={20} />
@@ -437,11 +575,80 @@ function FarmerView({ isWalletConnected, showToast }) {
           </div>
         </div>
       </div>
+
+      {/* DASHBOARD ANALÍTICO */}
+      <div className="mt-8 bg-panel rounded-lg p-6 border border-border shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
+          <span>📊</span> Rendimiento y Analíticas
+        </h3>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="h-72 w-full">
+            <h4 className="text-sm font-medium text-muted mb-4 text-center">Ingresos Mensuales (USDT)</h4>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={[
+                { name: 'Mar', uv: 4000 },
+                { name: 'Abr', uv: 3000 },
+                { name: 'May', uv: 5000 },
+                { name: 'Jun', uv: 2780 },
+                { name: 'Jul', uv: 1890 },
+                { name: 'Ago', uv: 6390 },
+              ]} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#2a2e33" vertical={false} />
+                <XAxis dataKey="name" stroke="#8b949e" tick={{ fill: '#8b949e', fontSize: 12 }} />
+                <YAxis stroke="#8b949e" tick={{ fill: '#8b949e', fontSize: 12 }} />
+                <Tooltip
+                  cursor={{ fill: 'rgba(252,211,77,0.1)' }}
+                  contentStyle={{ backgroundColor: '#0b0e11', border: '1px solid #30363d', borderRadius: '8px' }}
+                />
+                <Bar dataKey="uv" fill="#fcd34d" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="h-72 w-full">
+            <h4 className="text-sm font-medium text-muted mb-4 text-center">Distribución de Ventas por Cultivo</h4>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'Palta Hass', value: 400 },
+                    { name: 'Uva Quebranta', value: 300 },
+                    { name: 'Mango Edward', value: 300 },
+                    { name: 'Limón Sutil', value: 200 },
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {[
+                    { name: 'Palta Hass', value: 400 },
+                    { name: 'Uva Quebranta', value: 300 },
+                    { name: 'Mango Edward', value: 300 },
+                    { name: 'Limón Sutil', value: 200 },
+                  ].map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={['#fcd34d', '#10b981', '#3b82f6', '#f43f5e'][index % 4]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#0b0e11', border: '1px solid #30363d', borderRadius: '8px' }}
+                />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 }
 
-function MarketView({ goToCheckout, navigate, carrito, setCarrito }) {
+function MarketView({ goToCheckout, navigate, carrito, setCarrito, showToast }) {
+  const [marketType, setMarketType] = useState('spot');
   const [filter, setFilter] = useState('all');
   const [auditModal, setAuditModal] = useState(null);
   const [addedToCartModal, setAddedToCartModal] = useState(false);
@@ -451,73 +658,133 @@ function MarketView({ goToCheckout, navigate, carrito, setCarrito }) {
     if (existing) {
       setCarrito(carrito.map(item => item.id === product.name ? { ...item, cantidad: item.cantidad + 1 } : item));
     } else {
-      setCarrito([...carrito, { 
-        id: product.name, 
-        nombre: product.name, 
-        precio: product.price, 
-        criptomoneda: 'USDT', 
-        cantidad: 1, 
-        imagen: '🛒' 
+      setCarrito([...carrito, {
+        id: product.name,
+        nombre: product.name,
+        precio: product.price,
+        criptomoneda: 'USDT',
+        cantidad: 1,
+        imagen: '🛒'
       }]);
     }
     setAddedToCartModal(true);
   };
 
   const products = [
-    { name: 'Uva Quebranta', fundo: 'Fundo San Vicente', location: 'Valle de Cañete', harvestDate: 'Hace 2 días', rating: '4.9', lot: 500, price: 150.00, category: 'frutas', img: '/uva.png' },
-    { name: 'Palta Hass', fundo: 'Asoc. Nuevo Imperial', location: 'Nuevo Imperial', harvestDate: 'Hoy', rating: '5.0', lot: 1000, price: 850.00, category: 'export', img: '/palta.png' },
-    { name: 'Manzana Delicia', fundo: 'Fundo El Rosal', location: 'San Vicente', harvestDate: 'Hace 5 días', rating: '4.7', lot: 300, price: 120.00, category: 'frutas', img: '/manzana.png' },
-    { name: 'Limón Sutil', fundo: 'Hacienda San José', location: 'Tambos de Chincha', harvestDate: 'Hace 1 día', rating: '4.8', lot: 800, price: 240.00, category: 'frutas', img: '/limon.png' },
-    { name: 'Mango Edward', fundo: 'Agro Piura', location: 'Valle de San Lorenzo', harvestDate: 'Hoy', rating: '4.9', lot: 1500, price: 1125.00, category: 'export', img: '/mango.png' },
-    { name: 'Arándano Biloxi', fundo: 'Fundo Azul', location: 'Ica', harvestDate: 'Hace 3 días', rating: '5.0', lot: 250, price: 500.00, category: 'export', img: '/arandano.png' },
-    { name: 'Mandarina Murcott', fundo: 'Cítricos del Sur', location: 'Pisco', harvestDate: 'Hace 4 días', rating: '4.6', lot: 950, price: 380.00, category: 'frutas', img: '/mandarina.png' },
-    { name: 'Espárrago Verde', fundo: 'Fundo Esperanza', location: 'Villuri', harvestDate: 'Hoy', rating: '4.8', lot: 400, price: 600.00, category: 'export', img: '/esparrago.png' },
-    { name: 'Cebolla Roja', fundo: 'Agro Arequipa', location: 'Majes', harvestDate: 'Hace 6 días', rating: '4.5', lot: 2000, price: 500.00, category: 'frutas', img: '/cebolla.png' },
-    { name: 'Paprika', fundo: 'Valles Secos', location: 'Nazca', harvestDate: 'Hace 2 días', rating: '4.7', lot: 600, price: 900.00, category: 'export', img: '/paprika.png' },
-    { name: 'Quinua Blanca', fundo: 'Cooperativa Andina', location: 'Ayacucho', harvestDate: 'Hace 1 semana', rating: '5.0', lot: 1000, price: 2000.00, category: 'export', img: '/quinua.png' },
-    { name: 'Cacao Orgánico', fundo: 'Amazonas Bio', location: 'San Martín', harvestDate: 'Hace 10 días', rating: '4.9', lot: 500, price: 1500.00, category: 'export', img: '/cacao.png' },
-    { name: 'Uva Red Globe', fundo: 'Viñedos Ica', location: 'Villakuri', harvestDate: 'Ayer', rating: '4.8', lot: 1200, price: 600.00, category: 'export', img: '/uva.png' }
+    { name: 'Uva Quebranta', fundo: 'Fundo San Vicente', type: 'spot', location: 'Valle de Cañete', harvestDate: 'Hace 2 días', rating: '4.9', lot: 500, price: 150.00, category: 'frutas', img: '/uva.png' },
+    { name: 'Palta Hass', fundo: 'Asoc. Nuevo Imperial', type: 'spot', location: 'Nuevo Imperial', harvestDate: 'Hoy', rating: '5.0', lot: 1000, price: 850.00, category: 'export', img: '/palta.png' },
+    { name: 'Manzana Delicia', fundo: 'Fundo El Rosal', type: 'spot', location: 'San Vicente', harvestDate: 'Hace 5 días', rating: '4.7', lot: 300, price: 120.00, category: 'frutas', img: '/manzana.png' },
+    { name: 'Mango Edward (Futuro)', fundo: 'Agro Piura', type: 'futuro', location: 'Valle de San Lorenzo', harvestDate: 'En 3 meses', rating: '4.9', lot: 5000, price: 3000.00, category: 'export', img: '/mango.png' },
+    { name: 'Arándano Biloxi', fundo: 'Fundo Azul', type: 'spot', location: 'Ica', harvestDate: 'Hace 3 días', rating: '5.0', lot: 250, price: 500.00, category: 'export', img: '/arandano.png' },
+    { name: 'Espárrago Verde (Futuro)', fundo: 'Fundo Esperanza', type: 'futuro', location: 'Villuri', harvestDate: 'En 2 meses', rating: '4.8', lot: 2000, price: 2800.00, category: 'export', img: '/esparrago.png' },
+    { name: 'Cebolla Roja', fundo: 'Agro Arequipa', type: 'spot', location: 'Majes', harvestDate: 'Hace 6 días', rating: '4.5', lot: 2000, price: 500.00, category: 'frutas', img: '/cebolla.png' },
+    { name: 'Quinua Blanca (Futuro)', fundo: 'Cooperativa Andina', type: 'futuro', location: 'Ayacucho', harvestDate: 'En 5 meses', rating: '5.0', lot: 10000, price: 18000.00, category: 'export', img: '/quinua.png' },
+    { name: 'Cacao Orgánico', fundo: 'Amazonas Bio', type: 'spot', location: 'San Martín', harvestDate: 'Hace 10 días', rating: '4.9', lot: 500, price: 1500.00, category: 'export', img: '/cacao.png' },
+    { name: 'Uva Red Globe (Futuro)', fundo: 'Viñedos Ica', type: 'futuro', location: 'Villakuri', harvestDate: 'En 1 mes', rating: '4.8', lot: 3000, price: 1400.00, category: 'export', img: '/uva.png' },
+    { name: 'Fresa San Andreas', fundo: 'Fundo La Calera', type: 'spot', location: 'Chincha', harvestDate: 'Ayer', rating: '4.6', lot: 200, price: 200.00, category: 'frutas', img: '/uva.png' },
+    { name: 'Café Altomayo (Futuro)', fundo: 'Cafetaleros Unidos', type: 'futuro', location: 'San Martín', harvestDate: 'En 4 meses', rating: '5.0', lot: 1500, price: 4500.00, category: 'export', img: '/cacao.png' },
+    { name: 'Pera de Agua', fundo: 'Huerto San Antonio', type: 'spot', location: 'Huaral', harvestDate: 'Hace 4 días', rating: '4.7', lot: 600, price: 180.00, category: 'frutas', img: '/manzana.png' },
+    { name: 'Tomate Cherry', fundo: 'Invernaderos Lima', type: 'spot', location: 'Lurín', harvestDate: 'Hoy', rating: '4.8', lot: 150, price: 100.00, category: 'frutas', img: '/cebolla.png' },
+    { name: 'Pecana Mahán (Futuro)', fundo: 'Fundo El Nogal', type: 'futuro', location: 'Ica', harvestDate: 'En 6 meses', rating: '4.9', lot: 4000, price: 5000.00, category: 'export', img: '/arandano.png' },
+    { name: 'Granada Wonderful', fundo: 'Exportaciones Sur', type: 'spot', location: 'Nazca', harvestDate: 'Hace 2 días', rating: '4.8', lot: 900, price: 800.00, category: 'export', img: '/paprika.png' },
+    { name: 'Lúcuma de Seda', fundo: 'Fundo El Carmen', type: 'spot', location: 'Huaral', harvestDate: 'Hace 3 días', rating: '4.9', lot: 450, price: 400.00, category: 'frutas', img: '/mango.png' },
+    { name: 'Banano Orgánico (Futuro)', fundo: 'Agro Piura', type: 'futuro', location: 'Sullana', harvestDate: 'En 2 meses', rating: '5.0', lot: 6000, price: 4200.00, category: 'export', img: '/palta.png' },
+    { name: 'Mandarina W. Murcott (Futuro)', fundo: 'Huerto San Luis', type: 'futuro', location: 'Cañete', harvestDate: 'En 1 mes', rating: '4.7', lot: 1200, price: 800.00, category: 'frutas', img: '/manzana.png' },
+    { name: 'Papaya Criolla (Futuro)', fundo: 'Fundo El Sol', type: 'futuro', location: 'Huaral', harvestDate: 'En 3 meses', rating: '4.6', lot: 800, price: 500.00, category: 'frutas', img: '/mango.png' }
   ];
 
-  const filtered = filter === 'all' ? products : products.filter(p => p.category === filter);
+  const typeFiltered = products.filter(p => p.type === marketType);
+  const filtered = filter === 'all' ? typeFiltered : typeFiltered.filter(p => p.category === filter);
 
   return (
-    <div className="max-w-7xl mx-auto px-5 py-10 mt-10 animate-in fade-in duration-300">
-      <div className="flex justify-between items-center mb-8">
-        <h2 className="text-3xl font-bold">Mercado Spot 🛒</h2>
-        <div className="flex gap-5">
-          <button onClick={() => setFilter('all')} className={`font-semibold pb-2 border-b-2 transition-colors ${filter === 'all' ? 'text-main border-primary' : 'text-muted border-transparent hover:text-main'}`}>Todos</button>
-          <button onClick={() => setFilter('frutas')} className={`font-semibold pb-2 border-b-2 transition-colors ${filter === 'frutas' ? 'text-main border-primary' : 'text-muted border-transparent hover:text-main'}`}>Frutas locales</button>
-          <button onClick={() => setFilter('export')} className={`font-semibold pb-2 border-b-2 transition-colors ${filter === 'export' ? 'text-main border-primary' : 'text-muted border-transparent hover:text-main'}`}>Exportación</button>
+    <div className="max-w-7xl mx-auto px-4 md:px-5 py-5 md:py-10 mt-4 md:mt-10 animate-in fade-in duration-300">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold mb-4 md:mb-0">
+            {marketType === 'spot' ? 'Mercado Spot 🛒' : 'Mercado de Futuros 📅'}
+          </h2>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+          <div className="bg-dark rounded-lg p-1 border border-border flex">
+            <button onClick={() => setMarketType('spot')} className={`px-4 py-2 rounded-md font-bold text-sm transition-colors ${marketType === 'spot' ? 'bg-panel text-white shadow' : 'text-muted hover:text-white'}`}>Spot (Stock)</button>
+            <button onClick={() => setMarketType('futuro')} className={`px-4 py-2 rounded-md font-bold text-sm transition-colors ${marketType === 'futuro' ? 'bg-primary text-black shadow' : 'text-muted hover:text-white'}`}>Futuros</button>
+          </div>
+
+          <div className="flex gap-4 md:gap-5 overflow-x-auto pb-2 sm:pb-0 max-w-[90vw]">
+            <button onClick={() => setFilter('all')} className={`font-semibold pb-2 border-b-2 transition-colors whitespace-nowrap ${filter === 'all' ? 'text-main border-primary' : 'text-muted border-transparent hover:text-main'}`}>Todos</button>
+            <button onClick={() => setFilter('frutas')} className={`font-semibold pb-2 border-b-2 transition-colors whitespace-nowrap ${filter === 'frutas' ? 'text-main border-primary' : 'text-muted border-transparent hover:text-main'}`}>Frutas locales</button>
+            <button onClick={() => setFilter('export')} className={`font-semibold pb-2 border-b-2 transition-colors whitespace-nowrap ${filter === 'export' ? 'text-main border-primary' : 'text-muted border-transparent hover:text-main'}`}>Exportación</button>
+          </div>
         </div>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filtered.map((p, i) => (
-          <div key={i} className="bg-panel border border-border rounded-lg p-5 flex flex-col group hover:border-primary/50 transition-colors">
-            <div className="w-full h-48 rounded overflow-hidden mb-4">
-              <img src={p.img} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-            </div>
-            <div className="bg-success-bg text-success border border-success px-2 py-1 rounded text-xs font-bold w-fit flex items-center gap-1 mb-3">
-              <ShieldCheck size={14} /> Origen Verificado en Blockchain
-            </div>
-            <h3 className="text-xl font-bold mb-1">{p.name}</h3>
-            <p className="text-muted text-sm mb-2">{p.fundo}</p>
-            <div className="flex gap-2 text-xs text-muted mb-4">
-              <span className="bg-dark px-2 py-1 rounded border border-border">📅 Cosecha: {p.harvestDate}</span>
-              <span className="bg-dark px-2 py-1 rounded border border-border flex items-center gap-1">⭐ {p.rating} / 5.0</span>
-            </div>
-            <div className="flex justify-between items-center bg-dark p-4 rounded mb-5 border border-border">
-              <span className="text-sm font-medium">Lote: <strong className="text-white">{p.lot} KG</strong></span>
-              <span className="text-xl font-bold text-main">{p.price.toFixed(2)} USDT</span>
-            </div>
-            <div className="flex justify-between items-center mt-auto">
-              <button onClick={() => setAuditModal(p)} className="text-muted text-sm underline hover:text-main transition-colors">Auditar Contrato</button>
-              <button onClick={() => handleAddToCart(p)} className="bg-primary text-black font-semibold py-2 px-6 rounded hover:bg-primary-hover transition-colors shadow-lg shadow-primary/10">Añadir al carro</button>
-            </div>
-          </div>
-        ))}
-      </div>
+
+      <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <AnimatePresence mode="popLayout">
+          {filtered.map((p) => (
+            <motion.div
+              layout
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.4, type: "spring", bounce: 0.15 }}
+              key={p.name}
+              className="bg-panel border border-border rounded-lg p-5 flex flex-col group hover:border-primary/50 transition-colors"
+            >
+              <div className="w-full h-48 rounded overflow-hidden mb-4">
+                <img src={p.img} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              </div>
+              <div className="bg-success-bg text-success border border-success px-2 py-1 rounded text-xs font-bold w-fit flex items-center gap-1 mb-3">
+                <ShieldCheck size={14} /> Origen Verificado en Blockchain
+              </div>
+              <h3 className="text-xl font-bold mb-1">{p.name}</h3>
+              <p className="text-muted text-sm mb-2">{p.fundo}</p>
+              <div className="flex gap-2 text-xs text-muted mb-4 flex-wrap">
+                <span className={`px-2 py-1 rounded border border-border ${p.type === 'futuro' ? 'bg-primary/10 text-primary border-primary/20' : 'bg-dark'}`}>📅 {p.type === 'futuro' ? 'Estimado:' : 'Cosecha:'} {p.harvestDate}</span>
+                <span className="bg-dark px-2 py-1 rounded border border-border flex items-center gap-1">⭐ {p.rating}</span>
+              </div>
+              <div className="flex justify-between items-center bg-dark p-4 rounded mb-5 border border-border">
+                <div className="flex flex-col w-full">
+                  <div className="flex justify-between mb-2">
+                    <span className="text-sm font-medium">
+                      Lote: <strong className="text-white">{p.lot} KG</strong>
+                    </span>
+                    <span className="text-xl font-bold text-main">{p.price.toFixed(2)} USDT</span>
+                  </div>
+                  {p.type === 'futuro' && (
+                    <div className="w-full mt-2">
+                      <div className="flex justify-between text-xs text-muted mb-1">
+                        <span>Fondeado (Crowdfarming)</span>
+                        <span className="text-primary font-bold">65%</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-border rounded-full overflow-hidden">
+                        <div className="h-full bg-primary" style={{ width: '65%' }}></div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-col gap-3 mt-auto">
+                <div className="flex justify-between items-center">
+                  <button onClick={() => setAuditModal(p)} className="text-muted text-sm underline hover:text-main transition-colors">Auditar Contrato</button>
+                  <button
+                    onClick={() => {
+                      setChatTarget(p.fundo);
+                      setChatOpen(true);
+                    }}
+                    className="text-primary text-sm flex items-center gap-1 hover:underline transition-colors"
+                  >
+                    <MessageSquare size={16} /> Contactar
+                  </button>
+                </div>
+                <button onClick={() => handleAddToCart(p)} className="w-full bg-primary text-black font-semibold py-2 px-6 rounded hover:bg-primary-hover transition-colors shadow-lg shadow-primary/10">
+                  {p.type === 'futuro' ? 'Invertir en Fracción' : 'Añadir al carro'}
+                </button>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </motion.div>
 
       {auditModal && (
         <div className="fixed inset-0 bg-black/80 z-[9999] flex justify-center items-center p-5 animate-in fade-in duration-200" onClick={() => setAuditModal(null)}>
@@ -528,7 +795,7 @@ function MarketView({ goToCheckout, navigate, carrito, setCarrito }) {
               <h3 className="text-xl font-bold">Auditoría en Blockchain</h3>
             </div>
             <p className="text-sm text-muted mb-6">Los datos a continuación son inmutables y están verificados en la red Polygon.</p>
-            
+
             <div className="space-y-4">
               <div className="bg-dark p-4 rounded border border-border">
                 <p className="text-xs text-muted mb-1">Producto / Origen</p>
@@ -545,7 +812,7 @@ function MarketView({ goToCheckout, navigate, carrito, setCarrito }) {
                 <p className="text-xs font-mono text-muted mt-2 break-all">Hash: 0x{Math.random().toString(16).substr(2, 40)}</p>
               </div>
             </div>
-            
+
             <button className="w-full bg-border text-white font-semibold py-3 rounded mt-6 hover:bg-dark transition-colors" onClick={() => setAuditModal(null)}>
               Cerrar Auditoría
             </button>
@@ -560,7 +827,7 @@ function MarketView({ goToCheckout, navigate, carrito, setCarrito }) {
               <div className="w-10 h-10 bg-success/20 text-success rounded-full flex items-center justify-center text-xl border border-success/30">✓</div>
               <h3 className="text-2xl font-bold text-white">Lista de mi Pedido</h3>
             </div>
-            
+
             <div className="max-h-60 overflow-y-auto mb-6 pr-2 space-y-3">
               {carrito.map(item => (
                 <div key={item.id} className="flex justify-between items-center bg-dark p-3 rounded border border-border">
@@ -572,12 +839,12 @@ function MarketView({ goToCheckout, navigate, carrito, setCarrito }) {
                 </div>
               ))}
             </div>
-            
+
             <div className="border-t border-border pt-4 mb-6 flex justify-between items-center">
               <span className="text-muted font-semibold">Subtotal:</span>
               <span className="text-xl font-bold text-white">{carrito.reduce((acc, item) => acc + (item.precio * item.cantidad), 0).toFixed(2)} USDT</span>
             </div>
-            
+
             <div className="flex gap-3">
               <button onClick={() => setAddedToCartModal(false)} className="flex-1 bg-dark border border-border text-white font-semibold py-3 rounded hover:bg-border transition-colors">
                 Seguir comprando
@@ -645,14 +912,14 @@ function CheckoutView({ product, navigate, setLoading, setLoaderMsg, showToast }
   const logoSeleccionado = opcionesPago.find(m => m.id === moneda)?.logo;
 
   return (
-    <div className="max-w-2xl mx-auto px-5 py-10 mt-10 animate-in fade-in duration-300">
+    <div className="max-w-2xl mx-auto px-4 md:px-5 py-5 md:py-10 mt-4 md:mt-10 animate-in fade-in duration-300">
       <button onClick={() => navigate('market')} className="flex items-center gap-1 text-muted hover:text-main transition-colors mb-6 text-sm">
         <ChevronLeft size={16} /> Volver al Mercado
       </button>
-      
+
       <div className="bg-panel border border-border rounded-lg p-8 shadow-2xl">
         <h2 className="text-3xl font-bold mb-6 text-center">Resumen de Pago ⚖️</h2>
-        
+
         <div className="bg-dark border border-border p-5 rounded-lg mb-8 space-y-2">
           <div className="flex justify-between">
             <span className="text-muted">Productor:</span>
@@ -674,9 +941,9 @@ function CheckoutView({ product, navigate, setLoading, setLoaderMsg, showToast }
             <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none z-10">
               {logoSeleccionado && <img src={logoSeleccionado} className="w-6 h-6 drop-shadow-sm" alt="logo" />}
             </div>
-            <select 
-              value={moneda} 
-              onChange={(e) => setMoneda(e.target.value)} 
+            <select
+              value={moneda}
+              onChange={(e) => setMoneda(e.target.value)}
               className="w-full appearance-none bg-dark border border-border text-white font-bold text-base rounded focus:outline-none focus:ring-0 focus:border-primary block py-4 pl-12 pr-10 shadow-sm cursor-pointer"
             >
               {opcionesPago.map(m => (
@@ -693,9 +960,19 @@ function CheckoutView({ product, navigate, setLoading, setLoaderMsg, showToast }
           <span className="text-xs font-bold text-primary uppercase tracking-wider mb-1">Total a Bloquear</span>
           <span className="text-4xl font-black text-primary">{total} <span className="text-xl font-bold">{moneda}</span></span>
         </div>
-        
-        <button onClick={signTransaction} className="w-full bg-primary text-black text-lg font-bold py-4 rounded hover:bg-primary-hover transition-colors shadow-lg shadow-primary/20">
-          Firmar Transacción Definitiva
+
+        <div className="bg-[#181a20] border border-border p-4 rounded-lg mb-8 text-sm text-muted">
+          <div className="flex items-start gap-3">
+            <Shield className="text-primary w-6 h-6 shrink-0 mt-0.5" />
+            <p>
+              <strong className="text-white block mb-1">Privacidad de Datos (Off-chain)</strong>
+              Tus datos de envío se cifran y almacenan en bases de datos privadas (Off-chain) por cumplimiento legal. Solo el Hash criptográfico de la transacción se registra en Polygon (On-chain).
+            </p>
+          </div>
+        </div>
+
+        <button onClick={signTransaction} className="w-full bg-primary text-black text-lg font-bold py-4 rounded hover:bg-primary-hover transition-colors shadow-lg shadow-primary/20 flex justify-center items-center gap-2">
+          <ShieldCheck /> Firmar Transacción Definitiva
         </button>
       </div>
 
@@ -715,7 +992,7 @@ function CheckoutView({ product, navigate, setLoading, setLoaderMsg, showToast }
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
           <div className="bg-panel border border-border rounded-[2rem] shadow-2xl flex flex-col items-center max-w-md w-full relative overflow-hidden animate-in zoom-in duration-300 my-8">
             <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-r from-primary to-yellow-600"></div>
-            
+
             <div className="p-8 w-full flex flex-col items-center print:p-0">
               <div className="success-checkmark mb-6">
                 <div className="check-icon">
@@ -751,7 +1028,7 @@ function CheckoutView({ product, navigate, setLoading, setLoaderMsg, showToast }
                 <button onClick={descargarPDF} className="w-full flex justify-center items-center gap-2 bg-primary hover:bg-primary-hover text-black font-bold py-3.5 px-4 rounded-xl transition-colors shadow-md">
                   Descargar Voucher (PDF)
                 </button>
-                
+
                 <div className="flex gap-3">
                   <button onClick={compartirVoucher} className="flex-1 flex justify-center items-center gap-2 bg-dark hover:bg-border text-white border border-border font-bold py-3.5 rounded-xl transition-colors">
                     Compartir
@@ -874,14 +1151,14 @@ function CartView({ navigate, carrito, setCarrito, setLastOrder }) {
       </div>
 
       <div className="border-t border-border pt-6">
-        
+
         {/* Selector de Criptomonedas (Dark Mode Web3) */}
         <div className="mb-6 p-5 rounded-xl bg-dark border border-border shadow-lg">
           <label className="block text-sm font-medium text-muted mb-3">Pagar con:</label>
-          
+
           <div className="relative">
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className="w-full flex items-center justify-between bg-panel border border-border rounded-lg p-3 text-white hover:bg-[#2b3139] focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
             >
@@ -897,7 +1174,7 @@ function CartView({ navigate, carrito, setCarrito, setLastOrder }) {
               <div className="absolute z-50 mt-2 w-full bg-panel border border-border rounded-lg shadow-xl max-h-60 overflow-y-auto custom-scrollbar">
                 <ul className="py-1 m-0">
                   {opcionesCripto.map(cripto => (
-                    <li 
+                    <li
                       key={cripto.symbol}
                       onClick={() => { setMonedaSeleccionada(cripto.symbol); setIsDropdownOpen(false); }}
                       className={`flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-dark transition-colors ${cripto.symbol === monedaSeleccionada ? 'bg-dark' : ''}`}
@@ -918,8 +1195,8 @@ function CartView({ navigate, carrito, setCarrito, setLastOrder }) {
           <div className="text-4xl font-black text-white mb-6">
             {totalPagar.toFixed(2)} <span className="text-xl text-primary">{monedaSeleccionada}</span>
           </div>
-          <button 
-            disabled={carrito.length === 0 || isProcessing} 
+          <button
+            disabled={carrito.length === 0 || isProcessing}
             onClick={handleCheckout}
             className="w-full bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold py-4 rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2"
           >
@@ -943,7 +1220,10 @@ function TrackingView({ lastOrder, navigate }) {
     reputacion: 4.9
   };
 
-  const pasoActual = 3;
+  const [pasoActual, setPasoActual] = useState(4); // Forzado a 4 para demo de Calificación
+  const [rating, setRating] = useState(0);
+  const [hoveredRating, setHoveredRating] = useState(0);
+  const [ratingSubmitted, setRatingSubmitted] = useState(false);
 
   const order = lastOrder || {
     items: [
@@ -980,7 +1260,7 @@ function TrackingView({ lastOrder, navigate }) {
 
       {/* PEDIDO ACTUAL: PRODUCTOR + TRACKING HORIZONTAL */}
       <div className="bg-panel rounded-3xl shadow-xl border border-border overflow-hidden">
-        
+
         {/* Header / Producer Info */}
         <div className="p-6 md:p-8 border-b border-border bg-dark/40 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
           <div className="flex items-center gap-5">
@@ -1006,26 +1286,25 @@ function TrackingView({ lastOrder, navigate }) {
         {/* Tracking Horizontal */}
         <div className="p-6 md:p-10">
           <h3 className="text-lg font-bold text-white mb-10">Estado del Envío (Live Tracking)</h3>
-          
+
           <div className="relative">
             {/* Linea conectora horizontal */}
             <div className="absolute top-6 left-[10%] right-[10%] h-1 bg-dark rounded-full border border-border"></div>
-            
+
             {/* Barra de progreso activa */}
-            <div 
+            <div
               className="absolute top-6 left-[10%] h-1 bg-primary rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(252,213,53,0.5)]"
               style={{ width: `${((pasoActual - 1) / (pasos.length - 1)) * 80}%` }}
             ></div>
-            
+
             <div className="flex justify-between relative z-10">
               {pasos.map((paso) => (
                 <div key={paso.id} className="flex flex-col items-center text-center w-1/4">
-                  
-                  <div className={`flex-shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-full border-4 flex items-center justify-center transition-all duration-500 text-xl md:text-2xl z-10 mb-4 ${
-                    pasoActual >= paso.id 
-                      ? 'bg-panel border-primary shadow-[0_0_15px_rgba(252,213,53,0.3)] text-white scale-110' 
-                      : 'bg-dark border-border text-muted grayscale'
-                  }`}>
+
+                  <div className={`flex-shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-full border-4 flex items-center justify-center transition-all duration-500 text-xl md:text-2xl z-10 mb-4 ${pasoActual >= paso.id
+                    ? 'bg-panel border-primary shadow-[0_0_15px_rgba(252,213,53,0.3)] text-white scale-110'
+                    : 'bg-dark border-border text-muted grayscale'
+                    }`}>
                     {paso.icon}
                   </div>
 
@@ -1039,6 +1318,55 @@ function TrackingView({ lastOrder, navigate }) {
             </div>
           </div>
         </div>
+
+        {/* MÓDULO DE REPUTACIÓN (Solo si está Entregado) */}
+        {pasoActual === 4 && (
+          <div className="bg-primary/5 border-t border-primary/20 p-6 md:p-8 flex flex-col items-center justify-center animate-in slide-in-from-bottom-4 fade-in duration-500">
+            {!ratingSubmitted ? (
+              <>
+                <h3 className="text-xl font-bold text-white mb-2 text-center">Califica a tu Productor</h3>
+                <p className="text-muted text-sm mb-6 text-center max-w-md">Tu calificación se registrará inmutablemente en la Blockchain para ayudar a construir una red de confianza.</p>
+                <div className="flex gap-2 mb-6">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      className="transition-transform hover:scale-110 focus:outline-none"
+                      onMouseEnter={() => setHoveredRating(star)}
+                      onMouseLeave={() => setHoveredRating(0)}
+                      onClick={() => setRating(star)}
+                    >
+                      <Star
+                        className={`w-10 h-10 transition-colors duration-200 ${star <= (hoveredRating || rating)
+                          ? 'text-primary fill-primary drop-shadow-[0_0_8px_rgba(252,213,53,0.8)]'
+                          : 'text-muted stroke-[1.5]'
+                          }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+                <button
+                  disabled={rating === 0}
+                  onClick={() => {
+                    setRatingSubmitted(true);
+                  }}
+                  className="bg-primary disabled:bg-border disabled:text-muted disabled:cursor-not-allowed hover:bg-primary-hover text-black font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-primary/20 flex items-center gap-2"
+                >
+                  <ShieldCheck /> Firmar Calificación (Web3)
+                </button>
+              </>
+            ) : (
+              <div className="text-center">
+                <div className="w-16 h-16 bg-success/20 text-success rounded-full flex items-center justify-center border border-success/30 text-3xl mx-auto mb-4">
+                  ✓
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">¡Calificación Registrada!</h3>
+                <p className="text-primary text-sm font-mono bg-dark px-3 py-1.5 rounded-lg border border-border inline-block">
+                  Tx: 0x{Math.random().toString(16).substr(2, 10)}... en Polygon
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* HISTORIAL DE PEDIDOS */}
@@ -1047,25 +1375,25 @@ function TrackingView({ lastOrder, navigate }) {
         <div className="space-y-4">
           {historial.map((pedido) => (
             <div key={pedido.id} className="bg-panel rounded-2xl p-5 border border-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-primary/50 hover:shadow-lg transition-all cursor-pointer group">
-               <div className="flex items-center gap-5">
-                  <div className="w-14 h-14 bg-dark rounded-2xl flex items-center justify-center text-3xl border border-border group-hover:scale-105 transition-transform shadow-sm">
-                    {pedido.emoji}
-                  </div>
-                  <div>
-                    <h4 className="text-white font-bold text-lg mb-1">{pedido.item}</h4>
-                    <p className="text-sm text-muted font-medium flex items-center gap-2">
-                      <span className="text-white/60">{pedido.id}</span> 
-                      <span className="text-border">•</span> 
-                      {pedido.fecha}
-                    </p>
-                  </div>
-               </div>
-               <div className="text-left sm:text-right w-full sm:w-auto flex sm:block justify-between items-center border-t sm:border-0 border-border pt-3 sm:pt-0 mt-2 sm:mt-0">
-                  <div className="text-white font-black text-lg">{pedido.total} <span className="text-primary text-sm font-bold">{pedido.cripto}</span></div>
-                  <div className="text-success text-xs font-bold sm:mt-1.5 bg-success/10 px-2.5 py-1 rounded-md border border-success/20 inline-block">
-                    ✓ {pedido.estado}
-                  </div>
-               </div>
+              <div className="flex items-center gap-5">
+                <div className="w-14 h-14 bg-dark rounded-2xl flex items-center justify-center text-3xl border border-border group-hover:scale-105 transition-transform shadow-sm">
+                  {pedido.emoji}
+                </div>
+                <div>
+                  <h4 className="text-white font-bold text-lg mb-1">{pedido.item}</h4>
+                  <p className="text-sm text-muted font-medium flex items-center gap-2">
+                    <span className="text-white/60">{pedido.id}</span>
+                    <span className="text-border">•</span>
+                    {pedido.fecha}
+                  </p>
+                </div>
+              </div>
+              <div className="text-left sm:text-right w-full sm:w-auto flex sm:block justify-between items-center border-t sm:border-0 border-border pt-3 sm:pt-0 mt-2 sm:mt-0">
+                <div className="text-white font-black text-lg">{pedido.total} <span className="text-primary text-sm font-bold">{pedido.cripto}</span></div>
+                <div className="text-success text-xs font-bold sm:mt-1.5 bg-success/10 px-2.5 py-1 rounded-md border border-success/20 inline-block">
+                  ✓ {pedido.estado}
+                </div>
+              </div>
             </div>
           ))}
         </div>
@@ -1088,10 +1416,10 @@ function ReceiptView({ lastOrder, navigate }) {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 mt-10">
+    <div className="max-w-2xl mx-auto px-4 md:px-6 mt-4 md:mt-10 mb-20">
       <div className="bg-[#181a20] rounded-3xl p-8 shadow-2xl border border-border relative overflow-hidden animate-in zoom-in-95 duration-500">
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-success to-primary"></div>
-        
+
         <h3 className="text-xl font-bold text-white mb-8 text-center tracking-wide">Detalle de mi Compra</h3>
 
         <div className="flex flex-col items-center mb-10 animate-in slide-in-from-bottom-4 fade-in duration-500" style={{ animationDelay: '100ms', animationFillMode: 'both' }}>
@@ -1099,7 +1427,7 @@ function ReceiptView({ lastOrder, navigate }) {
             <span className="text-success text-3xl">✓</span>
           </div>
           <h4 className="text-5xl font-black text-white mb-3 tracking-tight flex items-center gap-3">
-            + {order.total.toFixed(2)} 
+            + {order.total.toFixed(2)}
             <span className="flex items-center gap-1.5 text-2xl text-primary bg-dark px-3 py-1 rounded-xl border border-border">
               {order.icon && <img src={order.icon} alt={order.moneda} className="w-6 h-6 bg-white rounded-full" />}
               {order.moneda}
@@ -1108,27 +1436,37 @@ function ReceiptView({ lastOrder, navigate }) {
           <p className="text-muted text-sm font-medium bg-dark px-4 py-1.5 rounded-full border border-border">Pago Confirmado en Smart Contract</p>
         </div>
 
-        <div className="space-y-4 text-sm font-medium border-t border-border pt-6 mb-6 animate-in slide-in-from-bottom-4 fade-in duration-500" style={{ animationDelay: '200ms', animationFillMode: 'both' }}>
-          <div className="flex justify-between items-center">
-            <span className="text-muted">Estado</span>
-            <span className="text-success font-bold flex items-center gap-1">
-              <ShieldCheck className="w-4 h-4" /> Completado
-            </span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 border-t border-border pt-6 mb-6 animate-in slide-in-from-bottom-4 fade-in duration-500" style={{ animationDelay: '200ms', animationFillMode: 'both' }}>
+
+          <div className="space-y-4 text-sm font-medium bg-dark p-4 rounded-xl border border-border">
+            <h5 className="text-primary text-xs font-bold uppercase tracking-widest border-b border-border pb-2 mb-3">Registro On-Chain (Público)</h5>
+            <div className="flex justify-between items-center">
+              <span className="text-muted">Red</span>
+              <span className="text-white flex items-center gap-2"><div className="w-2 h-2 bg-purple-500 rounded-full"></div> Polygon</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted">Smart Contract</span>
+              <span className="text-white font-mono text-xs">0x8f...4b2c</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted">Tx Hash</span>
+              <span className="text-white font-mono text-xs truncate max-w-[100px]">0x{Math.random().toString(16).substr(2, 10)}</span>
+            </div>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-muted">Tipo</span>
-            <span className="text-white">Compra Directa de Cosecha</span>
+
+          <div className="space-y-4 text-sm font-medium bg-dark p-4 rounded-xl border border-border relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-2 opacity-10"><Shield size={40} /></div>
+            <h5 className="text-white text-xs font-bold uppercase tracking-widest border-b border-border pb-2 mb-3">Datos Legales Off-Chain (Privado)</h5>
+            <div className="flex justify-between items-center relative z-10">
+              <span className="text-muted">Comprador</span>
+              <span className="text-white font-semibold flex items-center gap-1"><ShieldCheck className="text-success w-3 h-3" /> Verificado</span>
+            </div>
+            <div className="flex justify-between items-center relative z-10">
+              <span className="text-muted">Dirección Envío</span>
+              <span className="text-white font-semibold flex items-center gap-1"><ShieldCheck className="text-success w-3 h-3" /> Encriptada</span>
+            </div>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-muted">Fecha</span>
-            <span className="text-white">{order.fecha}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-muted">Red Blockchain</span>
-            <span className="text-white flex items-center gap-2">
-              <div className="w-2 h-2 bg-purple-500 rounded-full"></div> Polygon Network
-            </span>
-          </div>
+
         </div>
 
         <div className="border-t border-border pt-6 mb-6 space-y-3 animate-in slide-in-from-bottom-4 fade-in duration-500" style={{ animationDelay: '300ms', animationFillMode: 'both' }}>
@@ -1136,7 +1474,7 @@ function ReceiptView({ lastOrder, navigate }) {
           {order.items.map((item, idx) => (
             <div key={idx} className="flex justify-between items-center text-sm">
               <span className="text-white flex items-center gap-2">
-                <span className="bg-dark text-muted px-2 py-0.5 rounded text-xs border border-border">{item.cantidad}x</span> 
+                <span className="bg-dark text-muted px-2 py-0.5 rounded text-xs border border-border">{item.cantidad}x</span>
                 {item.nombre}
               </span>
               <span className="text-white font-semibold">{(item.precio * item.cantidad).toFixed(2)} {order.moneda}</span>
