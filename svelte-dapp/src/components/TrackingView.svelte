@@ -48,7 +48,7 @@
   </div>
 
   <!-- PEDIDO ACTUAL: PRODUCTOR + TRACKING HORIZONTAL -->
-  <div class="bg-panel rounded-3xl shadow-xl border border-border overflow-hidden">
+  <div class="bg-panel/40 backdrop-blur-md rounded-3xl shadow-xl border border-border overflow-hidden">
     <!-- Header / Producer Info -->
     <div class="p-6 md:p-8 border-b border-border bg-dark/40 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
       <div class="flex items-center gap-5">
@@ -145,7 +145,7 @@
     <h3 class="text-2xl font-black text-white mb-6">Historial de Compras Pasadas 📜</h3>
     <div class="space-y-4">
       {#each historial as pedido}
-        <div class="bg-panel rounded-2xl p-5 border border-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-primary/50 hover:shadow-lg transition-all cursor-pointer group">
+        <div class="bg-panel/40 backdrop-blur-md rounded-2xl p-5 border border-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-primary/50 hover:shadow-lg transition-all cursor-pointer group">
           <div class="flex items-center gap-5">
             <div class="w-14 h-14 bg-dark rounded-2xl flex items-center justify-center text-3xl border border-border group-hover:scale-105 transition-transform shadow-sm">
               {pedido.emoji}

@@ -93,7 +93,7 @@
   
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
     <!-- FORMULARIO: Registrar Nuevo Lote -->
-    <div class="bg-panel rounded-lg p-6 border border-border lg:col-span-1 shadow-lg">
+    <div class="bg-panel/40 backdrop-blur-md rounded-lg p-6 border border-border lg:col-span-1 shadow-lg">
       <h3 class="text-xl font-semibold mb-6">Registrar Nuevo Lote</h3>
       <form onsubmit={registrarLote} class="flex flex-col gap-4">
         <div>
@@ -168,7 +168,7 @@
     </div>
 
     <!-- HISTORIAL Y ESCROW -->
-    <div class="bg-panel rounded-lg p-6 border border-border lg:col-span-2 shadow-lg">
+    <div class="bg-panel/40 backdrop-blur-md rounded-lg p-6 border border-border lg:col-span-2 shadow-lg">
       <h3 class="text-xl font-semibold mb-6">Historial de Smart Contracts</h3>
       <div class="overflow-x-auto mb-10">
         <table class="w-full text-left border-collapse">
@@ -346,7 +346,7 @@
   <!-- Modal Profesional de Carga/Éxito al Registrar -->
   {#if isSubmitting || showSuccessModal}
     <div class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex justify-center items-center p-4 transition-opacity animate-in fade-in duration-300">
-      <div class="bg-panel border {showSuccessModal ? 'border-primary' : 'border-border'} rounded-xl max-w-sm w-full p-8 relative shadow-2xl animate-in zoom-in-95 duration-500 flex flex-col items-center text-center">
+      <div class="bg-panel/40 backdrop-blur-md border {showSuccessModal ? 'border-primary' : 'border-border'} rounded-xl max-w-sm w-full p-5 md:p-8 relative shadow-2xl animate-in zoom-in-95 duration-500 flex flex-col items-center text-center">
         {#if isSubmitting}
           <div class="relative w-20 h-20 mb-6">
             <div class="absolute inset-0 border-4 border-dark rounded-full"></div>

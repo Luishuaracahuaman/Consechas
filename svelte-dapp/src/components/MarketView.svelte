@@ -16,11 +16,15 @@
     fetch('http://localhost:3000/api/products')
       .then(res => res.json())
       .then(data => {
-        products = data;
+        // Inicializar funding: 0 para las del productor, 65 para los datos semilla
+        products = data.map(p => ({
+          ...p,
+          funding: p.fundo === 'Fundo Productor Local' ? 0 : 65
+        }));
         loading = false;
       })
       .catch(err => {
-        console.error("Error fetching products", err);
+        console.error("Error fetching products:", err);
         showToast("Error de conexión al servidor DB", "error");
         loading = false;
       });
@@ -79,6 +83,12 @@
         imagen: '🛒'
       }];
     }
+    
+    // Simular inversión: sumar 10% al fondeo
+    if (product.type === 'futuro') {
+      product.funding = Math.min(100, product.funding + 10);
+    }
+
     addedToCartModal = true;
   }
 </script>
@@ -110,7 +120,7 @@
     {#if loading}
       <!-- Esqueleto de Carga Animado -->
       {#each [1, 2, 3] as skeleton}
-        <div class="bg-panel border border-border rounded-lg p-5 flex flex-col gap-4 animate-pulse">
+        <div class="bg-panel/40 backdrop-blur-md border border-white/10 rounded-xl p-5 flex flex-col gap-4 animate-pulse">
           <div class="w-full h-48 bg-dark rounded"></div>
           <div class="h-4 bg-dark rounded w-1/4"></div>
           <div class="h-6 bg-dark rounded w-3/4"></div>
@@ -125,7 +135,7 @@
       {/each}
     {:else}
       {#each filtered as p}
-        <div class="bg-panel border border-border rounded-lg p-5 flex flex-col group hover:border-primary/50 transition-colors animate-in fade-in zoom-in-95 duration-300 relative shadow-md">
+        <div class="bg-panel/40 backdrop-blur-md border border-white/10 rounded-xl p-5 flex flex-col group hover:border-primary/50 transition-colors animate-in fade-in zoom-in-95 duration-300 relative shadow-lg">
           {#if p.fundo === 'Fundo Productor Local'}
             <button onclick={() => openDeleteModal(p)} class="absolute top-2 right-2 z-10 bg-red-500/90 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-transform hover:scale-110" title="Eliminar mi publicación">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
@@ -153,10 +163,10 @@
               <div class="w-full mt-2">
                 <div class="flex justify-between text-xs text-muted mb-1">
                   <span>Fondeado (Crowdfarming)</span>
-                  <span class="text-primary font-bold">65%</span>
+                  <span class="text-primary font-bold">{p.funding}%</span>
                 </div>
-                <div class="w-full h-1.5 bg-border rounded-full overflow-hidden">
-                  <div class="h-full bg-primary" style="width: 65%;"></div>
+                <div class="w-full h-1.5 bg-border rounded-full overflow-hidden relative">
+                  <div class="h-full bg-primary transition-all duration-1000 ease-out" style="width: {p.funding}%;"></div>
                 </div>
               </div>
             {/if}
@@ -179,8 +189,8 @@
   </div>
 
   {#if auditModal}
-    <div class="fixed inset-0 bg-black/80 z-[9999] flex justify-center items-center p-5">
-      <div class="bg-panel border border-border rounded-lg max-w-md w-full p-6 relative shadow-2xl">
+    <div class="fixed inset-0 bg-black/80 z-[9999] flex justify-center items-center p-4">
+      <div class="bg-panel border border-border rounded-lg max-w-md w-full p-5 md:p-6 relative shadow-2xl">
         <button class="absolute top-4 right-4 text-muted hover:text-white" onclick={() => auditModal = null}>✕</button>
         <div class="flex items-center gap-2 mb-4 text-primary">
           <ShieldCheck size={24} />
@@ -247,7 +257,7 @@
   <!-- Modal Profesional de Confirmación de Eliminación -->
   {#if deleteModalOpen}
     <div class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex justify-center items-center p-4 transition-opacity animate-in fade-in duration-200">
-      <div class="bg-panel border border-border rounded-xl max-w-sm w-full p-6 relative shadow-2xl animate-in zoom-in-95 duration-300">
+      <div class="bg-panel border border-border rounded-xl max-w-sm w-full p-5 md:p-6 relative shadow-2xl animate-in zoom-in-95 duration-300">
         <div class="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
           <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 9-6 6"/><path d="m9 9 6 6"/><circle cx="12" cy="12" r="10"/></svg>
         </div>

@@ -126,7 +126,7 @@
     <p class="text-muted text-lg">Verifica los fondos de cualquier billetera de forma descentralizada a través de múltiples nodos RPC en tiempo real.</p>
   </div>
 
-  <div class="bg-panel border border-border rounded-[2rem] p-8 shadow-2xl mb-12">
+  <div class="bg-panel/40 backdrop-blur-md border border-border rounded-[2rem] p-8 shadow-2xl mb-12">
     <div class="flex flex-col md:flex-row gap-4 items-center">
       <div class="relative flex-grow w-full">
         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-muted">

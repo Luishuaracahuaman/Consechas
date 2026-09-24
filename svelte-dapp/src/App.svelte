@@ -1,5 +1,7 @@
 <script>
   import { onMount } from 'svelte';
+  import { crossfade } from 'svelte/transition';
+  import { cubicOut } from 'svelte/easing';
   import { ethers } from 'ethers';
   import { Menu, X, Bell, Play, ChevronDown } from 'lucide-svelte';
   import MarketView from './components/MarketView.svelte';
@@ -9,6 +11,10 @@
   import ReceiptView from './components/ReceiptView.svelte';
   import CheckoutView from './components/CheckoutView.svelte';
   import BalanceView from './components/BalanceView.svelte';
+  import AuroraBackground from './components/AuroraBackground.svelte';
+  import ShinyButton from './components/ShinyButton.svelte';
+  import Footer from './components/Footer.svelte';
+  import AppMenuBar from './components/AppMenuBar.svelte';
 
   // States
   let currentView = $state('home');
@@ -17,6 +23,18 @@
   let disconnectModalOpen = $state(false);
   let mobileMenuOpen = $state(false);
   let notificationsOpen = $state(false);
+
+  let lastScrollY = $state(0);
+  let showNav = $state(true);
+
+  function handleScroll() {
+    if (window.scrollY > lastScrollY && window.scrollY > 80) {
+      showNav = false; // Bajar oculta el menú
+    } else {
+      showNav = true;  // Subir lo muestra
+    }
+    lastScrollY = window.scrollY;
+  }
   let account = $state(null);
   let provider = null;
   let toast = $state(null);
@@ -61,6 +79,11 @@
     currentView = view;
     window.scrollTo(0, 0);
   }
+
+  const [send, receive] = crossfade({
+    duration: 400,
+    easing: cubicOut,
+  });
 
   async function connectWallet(walletName) {
     walletModalOpen = false;
@@ -248,7 +271,9 @@
   }
 </script>
 
-<div class="min-h-screen flex flex-col font-sans bg-dark text-main">
+<div class="min-h-screen flex flex-col font-sans text-main relative">
+  <AuroraBackground starCount={60} />
+
   {#if toast}
     <div class="fixed top-5 right-5 z-[10000] p-4 rounded-xl shadow-2xl border flex items-center gap-3 animate-in slide-in-from-right-8 duration-300 {toast.type === 'success' ? 'bg-panel border-success text-white' : 'bg-panel border-red-500 text-white'}">
       <div class="w-8 h-8 rounded-full flex items-center justify-center text-lg shadow-inner {toast.type === 'success' ? 'bg-success/20 text-success' : 'bg-red-500/20 text-red-500'}">
@@ -259,23 +284,31 @@
     </div>
   {/if}
 
-  <nav class="flex justify-between items-center px-4 md:px-10 py-4 bg-dark border-b border-border sticky top-0 z-50">
+  <svelte:window onscroll={handleScroll} />
+
+  <nav class="flex justify-between items-center px-4 md:px-10 py-4 bg-dark/70 backdrop-blur-md sticky top-0 z-50 transition-transform duration-300 {showNav ? 'translate-y-0' : '-translate-y-full'}">
     <div class="flex items-center gap-4 md:gap-12">
-      <div class="flex items-center cursor-pointer pl-2 mr-16 md:mr-40" onclick={() => navigate('home')}>
-        <img src="/logo_transparent.png" alt="TerraTrust Logo" class="h-20 md:h-28 w-auto object-contain scale-[1.7] md:scale-[2.2] origin-left drop-shadow-lg" />
+      <div class="flex items-center cursor-pointer pl-2 mr-4 md:mr-10" onclick={() => navigate('home')}>
+        <img src="/logo_transparent.png" alt="TerraTrust Logo" class="h-16 md:h-20 w-auto object-contain scale-[1.2] md:scale-[1.5] origin-left drop-shadow-lg" />
       </div>
 
       <button class="md:hidden ml-auto text-white p-2" onclick={() => mobileMenuOpen = !mobileMenuOpen}>
         {#if mobileMenuOpen}<X />{:else}<Menu />{/if}
       </button>
 
-      <ul class="absolute md:static top-full left-0 w-full md:w-auto bg-dark md:bg-transparent border-b md:border-b-0 border-border p-4 md:p-0 flex-col md:flex-row list-none gap-6 md:gap-10 text-base md:text-lg font-bold {mobileMenuOpen ? 'flex' : 'hidden md:flex'}">
-        <li><button onclick={() => navigate('market')} class="hover:text-primary transition-colors">Mercado</button></li>
-        <li><button onclick={() => navigate('farmer')} class="hover:text-primary transition-colors">Productor</button></li>
-        <li><button onclick={() => navigate('balance')} class="hover:text-primary transition-colors">Consultar Saldos</button></li>
-        <li><button onclick={() => navigate('cart')} class="hover:text-primary transition-colors text-primary flex items-center gap-2">🛒 Carrito</button></li>
-        <li><button onclick={() => navigate('tracking')} class="hover:text-primary transition-colors">Mis Pedidos</button></li>
-      </ul>
+      <div class="hidden md:flex flex-1 justify-center">
+        <AppMenuBar {currentView} {navigate} />
+      </div>
+      <!-- Menú Móvil (Solo se muestra cuando se clickea el botón de hamburguesa) -->
+      {#if mobileMenuOpen}
+        <div class="absolute top-full left-0 w-full bg-dark border-b border-border p-4 flex flex-col gap-2 z-50 md:hidden shadow-2xl">
+          <button class="text-left px-4 py-3 text-lg font-bold text-white hover:bg-white/10 rounded" onclick={() => { navigate('market'); mobileMenuOpen = false; }}>Mercado</button>
+          <button class="text-left px-4 py-3 text-lg font-bold text-white hover:bg-white/10 rounded" onclick={() => { navigate('farmer'); mobileMenuOpen = false; }}>Productor</button>
+          <button class="text-left px-4 py-3 text-lg font-bold text-white hover:bg-white/10 rounded" onclick={() => { navigate('balance'); mobileMenuOpen = false; }}>Saldos</button>
+          <button class="text-left px-4 py-3 text-lg font-bold text-white hover:bg-white/10 rounded" onclick={() => { navigate('cart'); mobileMenuOpen = false; }}>Carrito</button>
+          <button class="text-left px-4 py-3 text-lg font-bold text-white hover:bg-white/10 rounded" onclick={() => { navigate('tracking'); mobileMenuOpen = false; }}>Mis Pedidos</button>
+        </div>
+      {/if}
     </div>
     
     <div class="hidden md:flex items-center gap-8 relative">
@@ -328,42 +361,58 @@
           </div>
         {/if}
       </div>
-      <button
+      <ShinyButton 
+        label={isWalletConnected ? `🦊 ${account.slice(0, 6)}...` : 'Conectar Wallet'}
         onclick={() => isWalletConnected ? disconnectModalOpen = true : walletModalOpen = true}
-        class="font-semibold py-2 px-5 rounded transition-colors {isWalletConnected ? 'bg-border text-primary border border-primary hover:bg-red-900/30 hover:text-red-400 hover:border-red-500' : 'bg-primary text-black hover:bg-primary-hover'}"
-      >
-        {isWalletConnected ? `🦊 ${account.slice(0, 6)}...` : 'Conectar Wallet'}
-      </button>
+      />
     </div>
   </nav>
 
   <div class="md:hidden fixed bottom-4 right-4 z-40">
-    <button
+    <ShinyButton 
+      label={isWalletConnected ? '🦊 0x71C...' : 'Wallet'}
+      cornerRadius={32}
       onclick={() => isWalletConnected ? disconnectModalOpen = true : walletModalOpen = true}
-      class="font-bold py-3 px-4 rounded-full shadow-2xl flex items-center gap-2 {isWalletConnected ? 'bg-dark text-primary border border-primary' : 'bg-primary text-black'}"
-    >
-      {isWalletConnected ? '🦊 0x71C...' : 'Wallet'}
-    </button>
+    />
   </div>
 
   <main class="flex-grow">
     {#if currentView === 'home'}
       <div class="animate-in fade-in duration-300">
-        <header class="flex flex-col md:flex-row justify-between items-center py-10 md:py-20 px-4 md:px-[5%] max-w-7xl mx-auto gap-10">
-          <div class="w-full md:max-w-[50%] text-center md:text-left">
-            <h1 class="text-4xl md:text-5xl font-extrabold leading-[1.1] mb-5">USA TERRATRUST<br />PARA TODO</h1>
-            <p class="text-base md:text-lg text-main mb-8">Venta directa con Smart Contracts, pagos en USDT, trazabilidad blockchain y cero intermediarios en Cañete y Nuevo Imperial.</p>
-            <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-              <button onclick={() => navigate('market')} class="bg-primary text-black font-semibold py-3 px-6 rounded hover:bg-primary-hover text-base md:text-lg">Comienza a comprar hoy</button>
-              <button onclick={() => navigate('farmer')} class="bg-transparent text-primary border border-primary font-semibold py-3 px-6 rounded hover:bg-primary/10 text-base md:text-lg">Soy Productor</button>
-            </div>
+        <header class="flex flex-col items-center pt-16 md:pt-24 pb-10 px-4 max-w-[100vw] mx-auto relative overflow-hidden text-center z-10">
+          <div class="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-border bg-panel/50 backdrop-blur-sm mb-8 shadow-sm">
+            <span class="text-xs md:text-sm font-medium text-muted hover:text-white transition-colors cursor-pointer">Únete a los más de 200 agricultores 🚀</span>
           </div>
-          <div class="w-full md:w-[45%] mt-8 md:mt-0">
-            <img src="/hero.png" alt="Agricultor" class="w-full rounded-lg shadow-2xl border border-border" />
+          
+          <h1 class="text-5xl md:text-7xl lg:text-8xl font-extrabold leading-[1.1] mb-6 tracking-tight max-w-5xl">
+            Vende tu Cosecha con <br class="hidden md:block"/> <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-amber-600">Smart Contracts</span>
+          </h1>
+          
+          <p class="text-lg md:text-xl text-muted max-w-2xl mx-auto mb-16 px-4">
+            Venta directa, pagos seguros en USDT, trazabilidad blockchain y cero intermediarios para fundos de Cañete y Nuevo Imperial.
+          </p>
+          
+          <div class="relative w-full h-[300px] md:h-[450px] flex justify-center items-start mt-4">
+            <!-- Botones superpuestos en el centro -->
+            <div class="absolute top-[40%] md:top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 flex flex-col sm:flex-row gap-4">
+              <ShinyButton label="Comienza a comprar hoy" cornerRadius={32} onclick={() => navigate('market')} />
+              <button onclick={() => navigate('farmer')} class="bg-panel/80 backdrop-blur-md text-white border border-border font-bold py-3 px-8 rounded-full hover:bg-dark transition-colors text-lg shadow-xl">Soy Productor</button>
+            </div>
+            
+            <!-- Galería de imágenes estilo "Hero 3" -->
+            <div class="flex justify-center gap-3 md:gap-6 w-full max-w-[1400px] px-2 md:px-8">
+              <img src="/hero/grapes.jpg" alt="Uvas" class="w-24 sm:w-32 md:w-56 h-48 sm:h-64 md:h-96 object-cover rounded-2xl shadow-2xl -rotate-[8deg] translate-y-12 opacity-80 hover:opacity-100 hover:-translate-y-2 hover:-rotate-[4deg] transition-all duration-500 hidden sm:block" />
+              <img src="/hero/cacao.jpg" alt="Cacao" class="w-24 sm:w-32 md:w-56 h-48 sm:h-64 md:h-96 object-cover rounded-2xl shadow-2xl -rotate-[4deg] translate-y-4 opacity-90 hover:opacity-100 hover:-translate-y-2 hover:-rotate-[2deg] transition-all duration-500" />
+              <img src="/hero/field.jpg" alt="Campo" class="w-28 sm:w-36 md:w-64 h-56 sm:h-72 md:h-[420px] object-cover rounded-2xl shadow-2xl rotate-[1deg] translate-y-8 opacity-100 hover:-translate-y-2 hover:rotate-0 transition-all duration-500 z-20 ring-1 ring-border" />
+              <img src="/hero/apples.jpg" alt="Manzanas" class="w-24 sm:w-32 md:w-56 h-48 sm:h-64 md:h-96 object-cover rounded-2xl shadow-2xl rotate-[5deg] translate-y-2 opacity-90 hover:opacity-100 hover:-translate-y-2 hover:rotate-[3deg] transition-all duration-500" />
+              <img src="/hero/farmer.jpg" alt="Agricultor" class="w-24 sm:w-32 md:w-56 h-48 sm:h-64 md:h-96 object-cover rounded-2xl shadow-2xl rotate-[9deg] translate-y-16 opacity-80 hover:opacity-100 hover:-translate-y-2 hover:rotate-[5deg] transition-all duration-500 hidden md:block" />
+            </div>
+            
+            <!-- Sombra difuminada inferior removida para más transparencia -->
           </div>
         </header>
 
-        <section class="bg-[#0b0e11] py-10 md:py-20 px-4 md:px-[5%] border-t border-border">
+        <section class="py-10 md:py-20 px-4 md:px-[5%] z-10 relative bg-transparent">
           <div class="max-w-7xl mx-auto">
             <h2 class="text-3xl md:text-4xl font-extrabold leading-[1.1] mb-12 text-center">SOBRE EL PROYECTO <span class="text-primary">BLOCKCHAIN</span></h2>
             
@@ -372,7 +421,7 @@
               <div class="absolute inset-0 bg-primary/5 blur-[100px] rounded-full pointer-events-none"></div>
 
               <!-- Box 1 -->
-              <div class="relative group bg-gradient-to-br from-[#1a1c23] to-[#0b0e11] p-8 md:p-10 border border-border/40 rounded-3xl shadow-2xl hover:border-primary/50 transition-all duration-500 hover:-translate-y-2 overflow-hidden">
+              <div class="relative group bg-panel/40 backdrop-blur-md p-8 md:p-10 border border-border/40 rounded-3xl shadow-2xl hover:border-primary/50 transition-all duration-500 hover:-translate-y-2 overflow-hidden">
                 <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 
                 <div class="mb-10">
@@ -406,7 +455,7 @@
               </div>
               
               <!-- Box 2 -->
-              <div class="relative group bg-gradient-to-br from-[#1a1c23] to-[#0b0e11] p-8 md:p-10 border border-border/40 rounded-3xl shadow-2xl hover:border-primary/50 transition-all duration-500 hover:-translate-y-2 overflow-hidden">
+              <div class="relative group bg-panel/40 backdrop-blur-md p-8 md:p-10 border border-border/40 rounded-3xl shadow-2xl hover:border-primary/50 transition-all duration-500 hover:-translate-y-2 overflow-hidden">
                 <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 
                 <div class="mb-10">
@@ -616,9 +665,14 @@
     {/if}
   </main>
 
+  <!-- Pie de página animado -->
+  {#if currentView === 'home'}
+    <Footer />
+  {/if}
+
   {#if walletModalOpen}
-    <div class="fixed inset-0 bg-black/80 z-[9999] flex justify-center items-center p-5">
-      <div class="bg-panel border border-border rounded-lg max-w-sm w-full p-6 relative shadow-2xl">
+    <div class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex justify-center items-center p-4">
+      <div class="bg-panel border border-border rounded-xl max-w-md w-full p-5 md:p-8 relative shadow-2xl animate-in zoom-in-95 duration-200">
         <button class="absolute top-4 right-4 text-muted hover:text-white" onclick={() => walletModalOpen = false}>✕</button>
         <h3 class="text-xl font-bold mb-2">Conectar Wallet</h3>
         <p class="text-sm text-muted mb-6">Selecciona el proveedor para conectarte a TerraTrust.</p>
