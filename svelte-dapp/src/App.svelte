@@ -271,6 +271,7 @@
   }
 </script>
 
+<svelte:window onscroll={handleScroll} />
 <div class="min-h-screen flex flex-col font-sans text-main relative">
   <AuroraBackground starCount={60} />
 
@@ -283,8 +284,6 @@
       <button onclick={() => toast = null} class="ml-2 text-muted hover:text-white transition-colors">✕</button>
     </div>
   {/if}
-
-  <svelte:window onscroll={handleScroll} />
 
   <nav class="flex justify-between items-center px-4 md:px-10 py-4 bg-dark/70 backdrop-blur-md sticky top-0 z-50 transition-transform duration-300 {showNav ? 'translate-y-0' : '-translate-y-full'}">
     <div class="flex items-center gap-4 md:gap-12">
@@ -542,7 +541,7 @@
         </section>
 
         <!-- SECCION: TUS FONDOS Y LOTES ESTÁN SEGUROS -->
-        <section class="bg-[#0b0e11] py-10 md:py-20 px-4 md:px-[5%] border-t border-border">
+        <section class="bg-transparent py-10 md:py-20 px-4 md:px-[5%]">
           <div class="max-w-7xl mx-auto">
             <div class="flex flex-col md:flex-row justify-between mb-10 gap-10">
               <div class="w-full md:max-w-[45%]">
@@ -587,14 +586,14 @@
         </section>
 
         <!-- SECCION: PREGUNTAS FRECUENTES -->
-        <section class="py-10 md:py-20 px-4 md:px-[20%] bg-dark">
+        <section class="py-10 md:py-20 px-4 md:px-[20%] bg-transparent">
           <h2 class="text-2xl md:text-3xl font-bold text-center mb-10">Preguntas Frecuentes</h2>
           <div class="flex flex-col gap-4">
             <!-- svelte-ignore a11y_click_events_have_key_events -->
             <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <div class="bg-dark border-b border-border cursor-pointer py-4" onclick={() => toggleFaq(1)}>
+            <div class="bg-transparent border-b border-border/50 cursor-pointer py-4" onclick={() => toggleFaq(1)}>
               <div class="flex items-center gap-3 md:gap-4 text-base md:text-lg font-semibold">
-                <div class="bg-panel w-7 h-7 flex items-center justify-center rounded text-sm text-muted shrink-0">1</div>
+                <div class="bg-panel/40 backdrop-blur-md w-7 h-7 flex items-center justify-center rounded text-sm text-muted shrink-0">1</div>
                 <span>¿Por qué AgriChain es mejor que un mercado tradicional?</span>
                 <ChevronDown class="ml-auto text-muted shrink-0 transition-transform duration-300 {faqOpen === 1 ? 'rotate-180' : ''}" />
               </div>
@@ -605,9 +604,9 @@
             
             <!-- svelte-ignore a11y_click_events_have_key_events -->
             <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <div class="bg-dark border-b border-border cursor-pointer py-4" onclick={() => toggleFaq(2)}>
+            <div class="bg-transparent border-b border-border/50 cursor-pointer py-4" onclick={() => toggleFaq(2)}>
               <div class="flex items-center gap-3 md:gap-4 text-base md:text-lg font-semibold">
-                <div class="bg-panel w-7 h-7 flex items-center justify-center rounded text-sm text-muted shrink-0">2</div>
+                <div class="bg-panel/40 backdrop-blur-md w-7 h-7 flex items-center justify-center rounded text-sm text-muted shrink-0">2</div>
                 <span>¿Cómo funcionan los Smart Contracts en la agricultura?</span>
                 <ChevronDown class="ml-auto text-muted shrink-0 transition-transform duration-300 {faqOpen === 2 ? 'rotate-180' : ''}" />
               </div>

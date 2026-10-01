@@ -159,7 +159,7 @@
 
   <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
     {#each Object.entries(balances) as [key, data]}
-      <div class="bg-gradient-to-br from-dark to-[#0b0e11] border {data.loading ? 'border-primary shadow-[0_0_15px_rgba(252,213,53,0.3)]' : 'border-border'} rounded-2xl p-6 relative overflow-hidden transition-all duration-300 group hover:border-primary/50 hover:-translate-y-1">
+      <div class="bg-panel/40 backdrop-blur-md border {data.loading ? 'border-primary shadow-[0_0_15px_rgba(252,213,53,0.3)]' : 'border-border'} rounded-2xl p-6 relative overflow-hidden transition-all duration-300 group hover:border-primary/50 hover:-translate-y-1">
         <div class="flex justify-between items-start mb-6">
           <div class="flex items-center gap-3">
             <img src={data.logo} alt={data.name} class="w-10 h-10 bg-white rounded-full p-1 shadow-sm" />

@@ -1,7 +1,11 @@
 <script>
   import { Star, ShieldCheck } from 'lucide-svelte';
+  import LineChart from './LineChart.svelte';
 
   let { isWalletConnected, showToast } = $props();
+
+  let filtroAnaliticas = $state('Tendencia'); // Opciones: 'Tendencia', 'Comparar', 'Composición'
+  let isFilterMenuOpen = $state(false);
 
   let lotes = $state([]);
   
@@ -244,99 +248,55 @@
   </div>
 
   <!-- DASHBOARD ANALÍTICO -->
-  <div class="mt-8 bg-panel rounded-[2rem] p-8 border border-border shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 relative overflow-hidden">
+  <div class="mt-8 bg-panel/40 backdrop-blur-md rounded-[2rem] p-8 border border-border shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 relative overflow-hidden">
     <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
 
-    <h3 class="text-2xl font-black mb-8 flex items-center gap-3 relative z-10 text-white">
-      <div class="w-10 h-10 bg-primary/20 text-primary rounded-xl flex items-center justify-center text-xl border border-primary/30 shadow-inner">📊</div> 
-      Rendimiento y Analíticas
-    </h3>
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4 relative z-10">
+      <h3 class="text-2xl font-black flex items-center gap-3 text-white">
+        <div class="w-10 h-10 bg-primary/20 text-primary rounded-xl flex items-center justify-center text-xl border border-primary/30 shadow-inner">📊</div> 
+        Rendimiento y Analíticas
+      </h3>
+      
+      <div class="flex items-center bg-dark/50 border border-border/50 rounded-lg p-1">
+        <button onclick={() => filtroAnaliticas = 'Tendencia'} class="px-4 py-1.5 text-sm font-semibold rounded-md transition-all {filtroAnaliticas === 'Tendencia' ? 'bg-primary text-black shadow' : 'text-muted hover:text-white'}">Tendencia</button>
+        <button onclick={() => filtroAnaliticas = 'Comparar'} class="px-4 py-1.5 text-sm font-semibold rounded-md transition-all {filtroAnaliticas === 'Comparar' ? 'bg-primary text-black shadow' : 'text-muted hover:text-white'}">Comparar</button>
+        <button onclick={() => filtroAnaliticas = 'Composición'} class="px-4 py-1.5 text-sm font-semibold rounded-md transition-all {filtroAnaliticas === 'Composición' ? 'bg-primary text-black shadow' : 'text-muted hover:text-white'}">Composición</button>
+      </div>
+    </div>
     
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 relative z-10">
       
       <!-- Gráfico de Ingresos -->
-      <div class="h-80 w-full bg-dark/80 backdrop-blur-sm border border-border/50 rounded-2xl p-6 flex flex-col justify-between hover:border-primary/50 transition-colors shadow-lg group/card">
-        <div class="flex justify-between items-center mb-6">
+      <div class="w-full bg-panel/40 backdrop-blur-md border border-border/50 rounded-2xl p-6 flex flex-col hover:border-primary/50 transition-colors shadow-lg group/card">
+        <div class="flex justify-between items-start mb-6">
           <div>
             <h4 class="text-xs font-bold text-muted uppercase tracking-widest mb-1">Ingresos (USDT)</h4>
-            <span class="text-2xl font-black text-white">40,500 <span class="text-primary text-sm font-bold">USDT</span></span>
+            <div class="flex items-center gap-3">
+              <span class="text-3xl font-black text-white">40,500 <span class="text-primary text-sm font-bold">USDT</span></span>
+              <span class="bg-success/20 text-success text-xs font-bold px-2 py-1 rounded-md border border-success/30">+14%</span>
+            </div>
           </div>
-          <span class="bg-success/20 text-success text-xs font-bold px-2 py-1 rounded-md border border-success/30">+14%</span>
         </div>
 
-        <div class="flex-grow flex items-end justify-between gap-2 md:gap-4 h-full border-b border-border pb-2 relative">
-          <!-- Líneas guía -->
-          <div class="absolute inset-0 flex flex-col justify-between pointer-events-none pb-2 border-l border-border pl-2 opacity-50">
-            <div class="w-full border-t border-border/50"></div>
-            <div class="w-full border-t border-border/50"></div>
-            <div class="w-full border-t border-border/50"></div>
-            <div class="w-full border-t border-border/50"></div>
-          </div>
-
-          {#each [
-            { label: 'Ene', val: 40, real: '4,000' },
-            { label: 'Feb', val: 65, real: '6,500' },
-            { label: 'Mar', val: 55, real: '5,500' },
-            { label: 'Abr', val: 80, real: '8,000' },
-            { label: 'May', val: 70, real: '7,000' },
-            { label: 'Jun', val: 95, real: '9,500' }
-          ] as point, i}
-            <div class="relative flex flex-col items-center flex-1 group h-full justify-end z-10">
-              <!-- Tooltip -->
-              <div class="absolute -top-12 opacity-0 group-hover:opacity-100 transition-opacity bg-panel border border-border px-3 py-1.5 rounded-lg text-xs text-primary font-black shadow-xl pointer-events-none z-20 whitespace-nowrap transform -translate-y-2 group-hover:translate-y-0 duration-200">
-                {point.real}
-              </div>
-              <!-- Barra -->
-              <div 
-                class="w-full max-w-[40px] bg-primary/20 group-hover:bg-primary rounded-t-md transition-all duration-300 border-t-2 border-primary shadow-[0_0_15px_rgba(252,213,53,0)] group-hover:shadow-[0_0_15px_rgba(252,213,53,0.5)] cursor-pointer" 
-                style="height: {point.val}%"
-              ></div>
-              <span class="text-[10px] text-muted mt-3 font-medium uppercase">{point.label}</span>
-            </div>
-          {/each}
+        <div class="mt-2 flex-grow h-full min-h-[300px]">
+          <LineChart color="#a855f7" mode={filtroAnaliticas} />
         </div>
       </div>
 
       <!-- Gráfico de Volumen -->
-      <div class="h-80 w-full bg-dark/80 backdrop-blur-sm border border-border/50 rounded-2xl p-6 flex flex-col justify-between hover:border-success/50 transition-colors shadow-lg group/card">
+      <div class="w-full bg-panel/40 backdrop-blur-md border border-border/50 rounded-2xl p-6 flex flex-col hover:border-success/50 transition-colors shadow-lg group/card">
         <div class="flex justify-between items-center mb-6">
           <div>
             <h4 class="text-xs font-bold text-muted uppercase tracking-widest mb-1">Volumen Entregado</h4>
-            <span class="text-2xl font-black text-white">960 <span class="text-success text-sm font-bold">Ton</span></span>
-          </div>
-          <span class="bg-success/20 text-success text-xs font-bold px-2 py-1 rounded-md border border-success/30">+8%</span>
-        </div>
-
-        <div class="flex-grow flex items-end justify-between gap-2 md:gap-4 h-full border-b border-border pb-2 relative">
-          <!-- Líneas guía -->
-          <div class="absolute inset-0 flex flex-col justify-between pointer-events-none pb-2 border-l border-border pl-2 opacity-50">
-            <div class="w-full border-t border-border/50"></div>
-            <div class="w-full border-t border-border/50"></div>
-            <div class="w-full border-t border-border/50"></div>
-            <div class="w-full border-t border-border/50"></div>
-          </div>
-
-          {#each [
-            { label: 'Ene', val: 30, real: '120' },
-            { label: 'Feb', val: 45, real: '150' },
-            { label: 'Mar', val: 65, real: '180' },
-            { label: 'Abr', val: 50, real: '140' },
-            { label: 'May', val: 85, real: '210' },
-            { label: 'Jun', val: 75, real: '160' }
-          ] as point, i}
-            <div class="relative flex flex-col items-center flex-1 group h-full justify-end z-10">
-              <!-- Tooltip -->
-              <div class="absolute -top-12 opacity-0 group-hover:opacity-100 transition-opacity bg-panel border border-border px-3 py-1.5 rounded-lg text-xs text-success font-black shadow-xl pointer-events-none z-20 whitespace-nowrap transform -translate-y-2 group-hover:translate-y-0 duration-200">
-                {point.real}
-              </div>
-              <!-- Barra -->
-              <div 
-                class="w-full max-w-[40px] bg-success/20 group-hover:bg-success rounded-t-md transition-all duration-300 border-t-2 border-success shadow-[0_0_15px_rgba(16,185,129,0)] group-hover:shadow-[0_0_15px_rgba(16,185,129,0.5)] cursor-pointer" 
-                style="height: {point.val}%"
-              ></div>
-              <span class="text-[10px] text-muted mt-3 font-medium uppercase">{point.label}</span>
+            <div class="flex items-center gap-3">
+              <span class="text-3xl font-black text-white">960 <span class="text-success text-sm font-bold">Ton</span></span>
+              <span class="bg-success/20 text-success text-xs font-bold px-2 py-1 rounded-md border border-success/30">+8%</span>
             </div>
-          {/each}
+          </div>
+        </div>
+        
+        <div class="mt-2 flex-grow h-full min-h-[300px]">
+          <LineChart color="#10b981" mode={filtroAnaliticas} />
         </div>
       </div>
 
