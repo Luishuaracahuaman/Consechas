@@ -97,6 +97,22 @@ app.delete('/api/products/:id', async (req, res) => {
   }
 });
 
+// Proxy para evitar CORS al consultar RPC locales (como Hoodi)
+app.post('/api/rpc-proxy', async (req, res) => {
+  const { rpcUrl, method, params } = req.body;
+  try {
+    const response = await fetch(rpcUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
+    });
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Backend server running on http://localhost:${PORT}`);
 });

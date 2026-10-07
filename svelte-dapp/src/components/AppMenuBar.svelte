@@ -1,6 +1,6 @@
 <script>
   import {
-    Home, Store, Sprout, Wallet, ShoppingCart, Truck
+    Home, Store, Sprout, Wallet, ShoppingCart, Truck, Send
   } from 'lucide-svelte';
 
   let { currentView, navigate } = $props();
@@ -21,24 +21,6 @@
     <span class="hidden sm:inline">Inicio</span>
   </button>
 
-  <!-- Mercado -->
-  <button 
-    class="flex-1 flex justify-center items-center gap-2 px-2 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all hover:bg-white/10 {currentView === 'market' ? 'bg-primary/10 text-primary' : 'text-zinc-300 hover:text-white'}"
-    onclick={() => handleNavigate('market')}
-  >
-    <Store class="w-4 h-4" />
-    <span class="hidden sm:inline">Mercado</span>
-  </button>
-
-  <!-- Productor -->
-  <button 
-    class="flex-1 flex justify-center items-center gap-2 px-2 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all hover:bg-white/10 {currentView === 'farmer' ? 'bg-primary/10 text-primary' : 'text-zinc-300 hover:text-white'}"
-    onclick={() => handleNavigate('farmer')}
-  >
-    <Sprout class="w-4 h-4" />
-    <span class="hidden sm:inline">Productor</span>
-  </button>
-
   <!-- Saldos -->
   <button 
     class="flex-1 flex justify-center items-center gap-2 px-2 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all hover:bg-white/10 {currentView === 'balance' ? 'bg-primary/10 text-primary' : 'text-zinc-300 hover:text-white'}"
@@ -48,23 +30,12 @@
     <span class="hidden sm:inline">Saldos</span>
   </button>
 
-  <div class="w-px h-6 bg-white/10 mx-1 hidden sm:block"></div>
-
-  <!-- Carrito -->
+  <!-- Transferir -->
   <button 
-    class="flex-1 flex justify-center items-center gap-2 px-2 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all hover:bg-white/10 {currentView === 'cart' ? 'bg-primary/10 text-primary' : 'text-zinc-300 hover:text-white'}"
-    onclick={() => handleNavigate('cart')}
+    class="flex-1 flex justify-center items-center gap-2 px-2 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all hover:bg-white/10 {currentView === 'transfer' ? 'bg-primary/10 text-primary' : 'text-zinc-300 hover:text-white'}"
+    onclick={() => handleNavigate('transfer')}
   >
-    <ShoppingCart class="w-4 h-4" />
-    <span class="hidden sm:inline">Carrito</span>
-  </button>
-
-  <!-- Pedidos -->
-  <button 
-    class="flex-1 flex justify-center items-center gap-2 px-2 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all hover:bg-white/10 {currentView === 'tracking' ? 'bg-primary/10 text-primary' : 'text-zinc-300 hover:text-white'}"
-    onclick={() => handleNavigate('tracking')}
-  >
-    <Truck class="w-4 h-4" />
-    <span class="hidden sm:inline">Pedidos</span>
+    <Send class="w-4 h-4" />
+    <span class="hidden sm:inline">Transferir</span>
   </button>
 </div>

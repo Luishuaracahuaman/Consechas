@@ -11,6 +11,7 @@
   import ReceiptView from './components/ReceiptView.svelte';
   import CheckoutView from './components/CheckoutView.svelte';
   import BalanceView from './components/BalanceView.svelte';
+  import TransferView from './components/TransferView.svelte';
   import AuroraBackground from './components/AuroraBackground.svelte';
   import ShinyButton from './components/ShinyButton.svelte';
   import Footer from './components/Footer.svelte';
@@ -169,6 +170,15 @@
       blockExplorerUrls: ['https://tanenbaum.io'],
       logo: 'https://cryptologos.cc/logos/starknet-token-strk-logo.svg' // Logo distinto (Testnet)
     },
+    'zksys-testnet': {
+      chainId: '0xdeE1', // 57057
+      chainName: 'zkSYS Testnet',
+      shortName: 'zkSYS Testnet',
+      rpcUrls: ['https://rpc-zk.tanenbaum.io'],
+      nativeCurrency: { name: 'TSYS', symbol: 'TSYS', decimals: 18 },
+      blockExplorerUrls: ['https://explorer-zk.tanenbaum.io'],
+      logo: 'https://cryptologos.cc/logos/cosmos-atom-logo.svg' // Logo genérico para que se vea
+    },
     'base-sepolia': {
       chainId: '0x14a34', // 84532
       chainName: 'Base Sepolia Testnet',
@@ -179,11 +189,12 @@
       logo: 'https://avatars.githubusercontent.com/u/108554348?v=4'
     },
     'hoodi': {
-      chainId: '0x539', // 1337 localhost / custom
+      chainId: '0x88bb0', // 560048
       chainName: 'Ethereum Hoodi',
       shortName: 'Ethereum Hoodi',
-      rpcUrls: ['http://localhost:8545'],
+      rpcUrls: ['https://0xrpc.io/hoodi'],
       nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+      blockExplorerUrls: ['https://light-hoodi.beaconcha.in/'],
       logo: 'https://cryptologos.cc/logos/avalanche-avax-logo.svg' // Logo funcional
     },
     'sepolia': {
@@ -287,9 +298,10 @@
 
   <nav class="flex justify-between items-center px-4 md:px-10 py-4 bg-dark/70 backdrop-blur-md sticky top-0 z-50 transition-transform duration-300 {showNav ? 'translate-y-0' : '-translate-y-full'}">
     <div class="flex items-center gap-4 md:gap-12">
-      <div class="flex items-center cursor-pointer pl-2 mr-4 md:mr-10" onclick={() => navigate('home')}>
+      <!-- Logo Oculto -->
+      <!-- <div class="flex items-center cursor-pointer pl-2 mr-4 md:mr-10" onclick={() => navigate('home')}>
         <img src="/logo_transparent.png" alt="TerraTrust Logo" class="h-16 md:h-20 w-auto object-contain scale-[1.2] md:scale-[1.5] origin-left drop-shadow-lg" />
-      </div>
+      </div> -->
 
       <button class="md:hidden ml-auto text-white p-2" onclick={() => mobileMenuOpen = !mobileMenuOpen}>
         {#if mobileMenuOpen}<X />{:else}<Menu />{/if}
@@ -301,11 +313,7 @@
       <!-- Menú Móvil (Solo se muestra cuando se clickea el botón de hamburguesa) -->
       {#if mobileMenuOpen}
         <div class="absolute top-full left-0 w-full bg-dark border-b border-border p-4 flex flex-col gap-2 z-50 md:hidden shadow-2xl">
-          <button class="text-left px-4 py-3 text-lg font-bold text-white hover:bg-white/10 rounded" onclick={() => { navigate('market'); mobileMenuOpen = false; }}>Mercado</button>
-          <button class="text-left px-4 py-3 text-lg font-bold text-white hover:bg-white/10 rounded" onclick={() => { navigate('farmer'); mobileMenuOpen = false; }}>Productor</button>
           <button class="text-left px-4 py-3 text-lg font-bold text-white hover:bg-white/10 rounded" onclick={() => { navigate('balance'); mobileMenuOpen = false; }}>Saldos</button>
-          <button class="text-left px-4 py-3 text-lg font-bold text-white hover:bg-white/10 rounded" onclick={() => { navigate('cart'); mobileMenuOpen = false; }}>Carrito</button>
-          <button class="text-left px-4 py-3 text-lg font-bold text-white hover:bg-white/10 rounded" onclick={() => { navigate('tracking'); mobileMenuOpen = false; }}>Mis Pedidos</button>
         </div>
       {/if}
     </div>
@@ -330,33 +338,6 @@
                 </div>
               {/each}
             </div>
-          </div>
-        {/if}
-      </div>
-
-      <!-- Custom Network Dropdown -->
-      <div class="relative">
-        <button 
-          onclick={() => networkDropdownOpen = !networkDropdownOpen}
-          class="flex items-center gap-2 bg-panel px-3 py-1.5 rounded text-sm font-bold border border-border focus:outline-none focus:border-primary text-white cursor-pointer shadow-sm transition-colors"
-        >
-          <span class="w-2 h-2 rounded-full inline-block shadow-[0_0_5px_rgba(255,255,255,0.5)] {currentNetwork === 'utxo' ? 'bg-orange-500' : 'bg-success'}"></span>
-          <img src={networks[currentNetwork].logo} alt={networks[currentNetwork].shortName} class="w-4 h-4 rounded-full bg-white/10" />
-          {networks[currentNetwork].shortName}
-          <ChevronDown size={14} class="text-muted" />
-        </button>
-
-        {#if networkDropdownOpen}
-          <div class="absolute top-full left-0 mt-2 w-48 bg-panel border border-border rounded-xl shadow-2xl overflow-hidden z-[100] animate-in slide-in-from-top-2 duration-200">
-            {#each Object.entries(networks) as [key, net]}
-              <button
-                class="w-full text-left px-4 py-2 hover:bg-dark flex items-center gap-3 transition-colors {currentNetwork === key ? 'bg-dark border-l-2 border-primary text-primary' : 'text-white'}"
-                onclick={() => { switchNetwork(key); networkDropdownOpen = false; }}
-              >
-                <img src={net.logo} alt={net.shortName} class="w-5 h-5 rounded-full bg-white p-0.5" />
-                <span class="text-sm font-semibold">{net.shortName}</span>
-              </button>
-            {/each}
           </div>
         {/if}
       </div>
@@ -656,6 +637,17 @@
       <BalanceView 
         account={account}
         isWalletConnected={isWalletConnected}
+        networks={networks}
+        currentNetwork={currentNetwork}
+        switchNetwork={switchNetwork}
+      />
+    {:else if currentView === 'transfer'}
+      <TransferView 
+        account={account}
+        isWalletConnected={isWalletConnected}
+        networks={networks}
+        currentNetwork={currentNetwork}
+        switchNetwork={switchNetwork}
       />
     {:else}
       <div class="max-w-4xl mx-auto text-center py-20">

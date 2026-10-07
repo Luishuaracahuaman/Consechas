@@ -101,36 +101,36 @@
       <h3 class="text-xl font-semibold mb-6">Registrar Nuevo Lote</h3>
       <form onsubmit={registrarLote} class="flex flex-col gap-4">
         <div>
-          <label class="block text-sm text-muted mb-1">Tipo de cultivo</label>
-          <input type="text" placeholder="Ej: Uva Italia" required class="w-full p-3 bg-dark border border-border text-white rounded focus:outline-none focus:border-primary transition-colors" bind:value={form.cultivo} />
+          <label for="cultivo" class="block text-sm text-muted mb-1">Tipo de cultivo</label>
+          <input id="cultivo" type="text" placeholder="Ej: Uva Italia" required class="w-full p-3 bg-dark border border-border text-white rounded focus:outline-none focus:border-primary transition-colors" bind:value={form.cultivo} />
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm text-muted mb-1">Cantidad (KG)</label>
-            <input type="number" placeholder="Ej: 1000" required class="w-full p-3 bg-dark border border-border text-white rounded focus:outline-none focus:border-primary transition-colors" bind:value={form.cantidad} />
+            <label for="cantidad" class="block text-sm text-muted mb-1">Cantidad (KG)</label>
+            <input id="cantidad" type="number" placeholder="Ej: 1000" required class="w-full p-3 bg-dark border border-border text-white rounded focus:outline-none focus:border-primary transition-colors" bind:value={form.cantidad} />
           </div>
           <div>
-            <label class="block text-sm text-muted mb-1">Precio (USDT)</label>
-            <input type="number" step="0.01" placeholder="Ej: 150" required class="w-full p-3 bg-dark border border-border text-white rounded focus:outline-none focus:border-primary transition-colors" bind:value={form.precio} />
+            <label for="precio" class="block text-sm text-muted mb-1">Precio (USDT)</label>
+            <input id="precio" type="number" step="0.01" placeholder="Ej: 150" required class="w-full p-3 bg-dark border border-border text-white rounded focus:outline-none focus:border-primary transition-colors" bind:value={form.precio} />
           </div>
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm text-muted mb-1">Modalidad</label>
-            <select class="w-full p-3 bg-dark border border-border text-white rounded focus:outline-none focus:border-primary transition-colors" bind:value={form.tipoVenta}>
+            <label for="tipoVenta" class="block text-sm text-muted mb-1">Modalidad</label>
+            <select id="tipoVenta" class="w-full p-3 bg-dark border border-border text-white rounded focus:outline-none focus:border-primary transition-colors" bind:value={form.tipoVenta}>
               <option value="Spot">Mercado Spot</option>
               <option value="Futuro">Venta a Futuro</option>
             </select>
           </div>
           {#if form.tipoVenta === 'Futuro'}
             <div class="animate-in fade-in zoom-in-95 duration-200">
-              <label class="block text-sm text-primary font-semibold mb-1">Mes de Cosecha</label>
-              <input type="month" required class="w-full p-3 bg-dark border border-primary text-white rounded focus:outline-none focus:border-primary transition-colors" bind:value={form.fechaEstimada} />
+              <label for="mesCosecha" class="block text-sm text-primary font-semibold mb-1">Mes de Cosecha</label>
+              <input id="mesCosecha" type="month" required class="w-full p-3 bg-dark border border-primary text-white rounded focus:outline-none focus:border-primary transition-colors" bind:value={form.fechaEstimada} />
             </div>
           {:else}
             <div>
-              <label class="block text-sm text-muted mb-1">Coordenadas GPS</label>
-              <input type="text" placeholder="-12.04, -77.04" required class="w-full p-3 bg-dark border border-border text-white rounded focus:outline-none focus:border-primary transition-colors" bind:value={form.gps} />
+              <label for="gps" class="block text-sm text-muted mb-1">Coordenadas GPS</label>
+              <input id="gps" type="text" placeholder="-12.04, -77.04" required class="w-full p-3 bg-dark border border-border text-white rounded focus:outline-none focus:border-primary transition-colors" bind:value={form.gps} />
             </div>
           {/if}
         </div>
