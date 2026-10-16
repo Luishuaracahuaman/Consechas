@@ -1,7 +1,7 @@
 <script>
   import { onMount } from 'svelte';
-  import { crossfade } from 'svelte/transition';
-  import { cubicOut } from 'svelte/easing';
+  import { crossfade, fly, scale } from 'svelte/transition';
+  import { cubicOut, quintOut, backOut } from 'svelte/easing';
   import { ethers } from 'ethers';
   import { Menu, X, Bell, Play, ChevronDown } from 'lucide-svelte';
   import MarketView from './components/MarketView.svelte';
@@ -88,20 +88,34 @@
 
   async function connectWallet(walletName) {
     walletModalOpen = false;
+    
+    let selectedProvider = window.ethereum;
+    
+    // Diferenciar entre MetaMask y Pali si ambos están inyectados
     if (window.ethereum) {
+      if (window.ethereum.providers) {
+        if (walletName === 'MetaMask') {
+          selectedProvider = window.ethereum.providers.find(p => p.isMetaMask && !p.isPali) || window.ethereum;
+        } else if (walletName === 'Pali Wallet') {
+          selectedProvider = window.ethereum.providers.find(p => p.isPali) || window.pali || window.ethereum;
+        }
+      } else if (walletName === 'Pali Wallet' && window.pali) {
+        selectedProvider = window.pali;
+      }
+
       try {
-        provider = new ethers.BrowserProvider(window.ethereum);
+        provider = new ethers.BrowserProvider(selectedProvider);
         const accounts = await provider.send("eth_requestAccounts", []);
         account = accounts[0];
         isWalletConnected = true;
-        showToast(`Wallet conectada exitosamente a través de ${walletName}.`);
+        showToast(`Conectado exitosamente con ${walletName}.`);
         
         // Escuchar cambios de cuenta sin recargar la página
-        window.ethereum.on('chainChanged', (chainId) => {
+        selectedProvider.on('chainChanged', (chainId) => {
           console.log("Red cambiada a:", chainId);
           // Opcional: Podrías actualizar el estado currentNetwork aquí si lo deseas
         });
-        window.ethereum.on('accountsChanged', (accounts) => {
+        selectedProvider.on('accountsChanged', (accounts) => {
           if (accounts.length > 0) account = accounts[0];
           else {
             account = null;
@@ -342,7 +356,8 @@
         {/if}
       </div>
       <ShinyButton 
-        label={isWalletConnected ? `🦊 ${account.slice(0, 6)}...` : 'Conectar Wallet'}
+        label={isWalletConnected ? `${account.slice(0, 6)}...` : 'Acceder a Web3'}
+        showOnlineIndicator={isWalletConnected}
         onclick={() => isWalletConnected ? disconnectModalOpen = true : walletModalOpen = true}
       />
     </div>
@@ -350,7 +365,8 @@
 
   <div class="md:hidden fixed bottom-4 right-4 z-40">
     <ShinyButton 
-      label={isWalletConnected ? '🦊 0x71C...' : 'Wallet'}
+      label={isWalletConnected ? 'Wallet' : 'Acceder'}
+      showOnlineIndicator={isWalletConnected}
       cornerRadius={32}
       onclick={() => isWalletConnected ? disconnectModalOpen = true : walletModalOpen = true}
     />
@@ -662,17 +678,53 @@
   {/if}
 
   {#if walletModalOpen}
-    <div class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex justify-center items-center p-4">
-      <div class="bg-panel border border-border rounded-xl max-w-md w-full p-5 md:p-8 relative shadow-2xl animate-in zoom-in-95 duration-200">
-        <button class="absolute top-4 right-4 text-muted hover:text-white" onclick={() => walletModalOpen = false}>✕</button>
-        <h3 class="text-xl font-bold mb-2">Conectar Wallet</h3>
-        <p class="text-sm text-muted mb-6">Selecciona el proveedor para conectarte a TerraTrust.</p>
+    <div class="fixed inset-0 bg-black/80 backdrop-blur-md z-[9999] flex justify-center items-center p-4">
+      <div 
+        in:fly={{ y: 40, duration: 500, easing: backOut }}
+        out:scale={{ start: 0.9, duration: 250, easing: quintOut }}
+        class="bg-[#0b0e11]/90 backdrop-blur-3xl border border-[#FCD34D]/30 rounded-3xl max-w-sm w-full p-8 relative shadow-[0_0_80px_rgba(252,213,77,0.15)] overflow-hidden group/modal"
+      >
+        <!-- Borde animado brillante -->
+        <div class="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-[#6C25B5]/20 opacity-0 group-hover/modal:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
+
+        <!-- Iluminación profesional animada -->
+        <div class="absolute -top-32 -right-32 w-80 h-80 bg-primary/20 rounded-full blur-[80px] pointer-events-none animate-pulse"></div>
+        <div class="absolute -bottom-32 -left-32 w-80 h-80 bg-[#6C25B5]/20 rounded-full blur-[80px] pointer-events-none animate-pulse" style="animation-delay: 1.5s;"></div>
+
+        <button class="absolute top-5 right-5 text-muted hover:text-white transition-all hover:rotate-90 z-20" onclick={() => walletModalOpen = false}>
+          <X size={24} />
+        </button>
         
-        <div class="flex flex-col gap-3">
-          <button onclick={() => connectWallet('MetaMask')} class="flex items-center gap-4 bg-dark border border-border p-4 rounded hover:border-primary transition-colors text-left font-semibold group">
-            <div class="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-xl shadow-lg">🦊</div>
-            <span class="group-hover:text-primary transition-colors">MetaMask</span>
-          </button>
+        <div class="relative z-10 mt-2">
+          <h3 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-[#FCD34D] to-white mb-3 text-center drop-shadow-sm tracking-tight">Acceso Web3</h3>
+          <p class="text-sm text-muted mb-10 text-center font-medium">Elige tu proveedor para operar en TerraTrust.</p>
+          
+          <div class="flex flex-col gap-5">
+            
+            <!-- Pali Wallet -->
+            <button onclick={() => connectWallet('Pali Wallet')} class="flex items-center justify-between bg-dark/80 backdrop-blur-sm border border-border/50 p-4 rounded-2xl hover:border-[#6C25B5] hover:bg-gradient-to-r hover:from-[#6C25B5]/20 hover:to-transparent transition-all duration-300 text-left font-semibold group shadow-lg hover:shadow-[0_0_25px_rgba(108,37,181,0.4)] hover:-translate-y-1">
+              <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full flex items-center justify-center drop-shadow-xl group-hover:scale-110 transition-transform">
+                  <!-- Imagen local subida por el usuario -->
+                  <img src="/logo-pali-v3.png" alt="Pali Wallet" class="w-full h-full object-contain rounded-full" />
+                </div>
+                <span class="text-white text-xl group-hover:text-[#b084e6] transition-colors tracking-wide">Pali Wallet</span>
+              </div>
+              <div class="w-2.5 h-2.5 rounded-full bg-[#6C25B5] opacity-0 group-hover:opacity-100 transition-opacity shadow-[0_0_10px_#6C25B5]"></div>
+            </button>
+
+            <!-- MetaMask -->
+            <button onclick={() => connectWallet('MetaMask')} class="flex items-center justify-between bg-dark/80 backdrop-blur-sm border border-border/50 p-4 rounded-2xl hover:border-[#F6851B] hover:bg-gradient-to-r hover:from-[#F6851B]/20 hover:to-transparent transition-all duration-300 text-left font-semibold group shadow-lg hover:shadow-[0_0_25px_rgba(246,133,27,0.4)] hover:-translate-y-1">
+              <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full flex items-center justify-center p-1 drop-shadow-xl group-hover:scale-110 transition-transform">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask" class="w-full h-full object-contain" />
+                </div>
+                <span class="text-white text-xl group-hover:text-[#F6851B] transition-colors tracking-wide">MetaMask</span>
+              </div>
+              <div class="w-2.5 h-2.5 rounded-full bg-[#F6851B] opacity-0 group-hover:opacity-100 transition-opacity shadow-[0_0_10px_#F6851B]"></div>
+            </button>
+
+          </div>
         </div>
       </div>
     </div>

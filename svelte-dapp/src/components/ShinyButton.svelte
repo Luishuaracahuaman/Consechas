@@ -13,7 +13,8 @@
     cornerRadius = 8, // Less rounded to match the TerraTrust style, or 32 for pill
     showSpeckle = true,
     showSheen = true,
-    speckleOpacity = 0.4
+    speckleOpacity = 0.4,
+    showOnlineIndicator = false
   } = $props();
 </script>
 
@@ -60,7 +61,12 @@
     --sheen-opacity: {showSheen ? 0.6 : 0};
   "
 >
-  <span>{label}</span>
+  <span class="flex items-center gap-2">
+    {#if showOnlineIndicator}
+      <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse"></span>
+    {/if}
+    {label}
+  </span>
 </button>
 
 <style>
