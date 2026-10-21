@@ -10,8 +10,8 @@
   let txHash = $state(null);
 
   const hashPlaceholder = "0x" + Math.random().toString(16).substr(2, 10);
-  const gasFee = 0.05;
-  let total = $derived((product?.price || 0) + gasFee);
+  const gasFee = 0.00001;
+  let total = $derived((parseFloat(product?.price) || 0.0001) + gasFee);
 
   const opcionesPago = [
     { id: 'USDT', nombre: 'USDT', logo: 'https://cryptologos.cc/logos/tether-usdt-logo.svg' },
@@ -33,13 +33,11 @@
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       
-      // Dirección del productor destino (dummy/mock pero real enviando ethers)
-      // Usaremos un address de prueba por seguridad
-      const toAddress = "0x000000000000000000000000000000000000dEaD";
+      // Dirección del productor destino (solicitada por el usuario)
+      const toAddress = "0xfad3E2f30896bf812CF779730d25018B46BE4C32";
       
-      // Amount in ETH/MATIC (usando MATIC como base para todo en modo nativo)
-      const amountToSend = total.toString();
-      const amountParsed = ethers.parseEther(amountToSend);
+      // Amount in ETH/MATIC (monto seguro para pruebas en testnet)
+      const amountParsed = ethers.parseEther("0.0001");
 
       // Enviar Tx Real
       const tx = await signer.sendTransaction({

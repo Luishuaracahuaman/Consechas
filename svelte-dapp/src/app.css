@@ -125,3 +125,20 @@
   84% { width: 55px; right: 0px; top: 35px; }
   100% { width: 47px; right: 8px; top: 38px; }
 }
+
+/* =========================================
+   Estilos Profesionales de Impresión / PDF
+========================================= */
+@media print {
+  nav, footer, .aurora-bg, #app-menu-bar, .menubar-container, .fixed, .print\:hidden, [class*="AppMenuBar"], button {
+    display: none !important;
+  }
+  body, html {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

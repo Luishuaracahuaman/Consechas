@@ -97,17 +97,78 @@ app.delete('/api/products/:id', async (req, res) => {
   }
 });
 
-// Proxy para evitar CORS al consultar RPC locales (como Hoodi)
-app.post('/api/rpc-proxy', async (req, res) => {
-  const { rpcUrl, method, params } = req.body;
+// Guardar nueva compra / boleta en Neon PostgreSQL
+app.post('/api/orders', async (req, res) => {
+  const {
+    txHash,
+    buyerWallet,
+    sellerWallet,
+    items,
+    totalAmount,
+    currency,
+    network,
+    networkKey,
+    explorerUrl,
+    concept,
+    status
+  } = req.body;
+
   try {
-    const response = await fetch(rpcUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
-    });
-    const data = await response.json();
-    res.json(data);
+    const { rows } = await pool.query(
+      `INSERT INTO orders (tx_hash, buyer_wallet, seller_wallet, items, total_amount, currency, network, network_key, explorer_url, concept, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       RETURNING *`,
+      [
+        txHash,
+        buyerWallet || null,
+        sellerWallet || '0xfad3E2f30896bf812CF779730d25018B46BE4C32',
+        JSON.stringify(items || []),
+        parseFloat(totalAmount) || 0,
+        currency || 'ETH',
+        network || 'Ethereum',
+        networkKey || 'sepolia',
+        explorerUrl || null,
+        concept || 'Compra de productos agrícolas',
+        status || 'confirmed'
+      ]
+    );
+
+    // Registrar también en la tabla lotes para que el Productor lo vea en su historial
+    if (items && Array.isArray(items) && items.length > 0) {
+      for (const item of items) {
+        await pool.query(
+          `INSERT INTO lotes (cultivo, volumen, hash, status) VALUES ($1, $2, $3, $4)`,
+          [`Venta: ${item.nombre}`, `${item.cantidad} KG`, txHash, 'Pagado']
+        );
+      }
+    }
+
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error guardando orden en BD:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Obtener todas las órdenes / historial de compras
+app.get('/api/orders', async (req, res) => {
+  try {
+    const { rows } = await pool.query("SELECT * FROM orders ORDER BY id DESC");
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Obtener la última orden realizada (para boleta / receipt)
+app.get('/api/orders/latest', async (req, res) => {
+  try {
+    const { rows } = await pool.query("SELECT * FROM orders ORDER BY id DESC LIMIT 1");
+    if (rows.length > 0) {
+      res.json(rows[0]);
+    } else {
+      res.status(404).json({ message: "No orders found" });
+    }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

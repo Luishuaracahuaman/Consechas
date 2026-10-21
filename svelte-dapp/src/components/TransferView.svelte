@@ -91,16 +91,51 @@
   
   let txHistory = $state([]);
   
-  // Cargar historial al iniciar
+  // Cargar historial al iniciar y sincronizar con Neon PostgreSQL
   $effect(() => {
+    let localTxs = [];
     const savedHistory = localStorage.getItem('transferHistory');
     if (savedHistory) {
       try {
-        txHistory = JSON.parse(savedHistory);
+        localTxs = JSON.parse(savedHistory);
+        txHistory = localTxs;
       } catch (e) {
-        console.error("Error cargando historial", e);
+        console.error("Error cargando historial local", e);
       }
     }
+
+    // Consultar Base de Datos Neon PostgreSQL
+    fetch('http://localhost:3000/api/orders')
+      .then(res => res.ok ? res.json() : [])
+      .then(dbOrders => {
+        if (Array.isArray(dbOrders) && dbOrders.length > 0) {
+          const dbTxs = dbOrders.map(o => ({
+            id: o.id,
+            hash: o.tx_hash,
+            to: o.seller_wallet,
+            amount: parseFloat(o.total_amount).toFixed(4),
+            symbol: o.currency,
+            network: o.network,
+            networkKey: o.network_key,
+            explorerUrl: o.explorer_url,
+            date: new Date(o.created_at).toLocaleString(),
+            status: o.status || 'confirmed',
+            concept: o.concept || 'Compra registrada en Neon DB'
+          }));
+
+          // Unir sin duplicados por hash
+          const combined = [...dbTxs];
+          for (const lt of localTxs) {
+            if (!combined.some(c => c.hash === lt.hash)) {
+              combined.push(lt);
+            }
+          }
+          txHistory = combined;
+        }
+      })
+      .catch(err => {
+        console.warn("Fallo lectura de órdenes en BD Neon:", err);
+      });
   });
 
   async function sendTransaction() {
@@ -171,10 +206,31 @@
       await tx.wait(); 
       
       txStatus = 'success';
-      
+
       // Actualizar estado en historial a confirmado
       txHistory = txHistory.map(t => t.hash === txHash ? { ...t, status: 'confirmed' } : t);
       localStorage.setItem('transferHistory', JSON.stringify(txHistory));
+
+      // Guardar también en base de datos Neon PostgreSQL
+      try {
+        fetch('http://localhost:3000/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            txHash: newTx.hash,
+            buyerWallet: account,
+            sellerWallet: newTx.to,
+            items: [{ nombre: 'Transferencia Directa', cantidad: 1, precio: parseFloat(newTx.amount) }],
+            totalAmount: parseFloat(newTx.amount),
+            currency: newTx.symbol,
+            network: newTx.network,
+            networkKey: newTx.networkKey,
+            explorerUrl: newTx.explorerUrl,
+            concept: 'Transferencia directa Web3',
+            status: 'confirmed'
+          })
+        }).catch(e => console.warn("Error guardando transfer en Neon DB:", e));
+      } catch (e) {}
 
     } catch (error) {
       console.error(error);

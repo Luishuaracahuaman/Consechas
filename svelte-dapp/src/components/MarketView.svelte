@@ -19,6 +19,7 @@
         // Inicializar funding: 0 para las del productor, 65 para los datos semilla
         products = data.map(p => ({
           ...p,
+          price: parseFloat(p.price) > 0 ? parseFloat(p.price) : 0.0001,
           funding: p.fundo === 'Fundo Productor Local' ? 0 : 65
         }));
         loading = false;
@@ -70,15 +71,16 @@
   let cartTotal = $derived(carrito.reduce((acc, item) => acc + (item.precio * item.cantidad), 0));
 
   function handleAddToCart(product) {
+    const unitPrice = parseFloat(product.price) > 0 ? parseFloat(product.price) : 0.0001;
     const existing = carrito.find(item => item.id === product.name);
     if (existing) {
-      carrito = carrito.map(item => item.id === product.name ? { ...item, cantidad: item.cantidad + 1 } : item);
+      carrito = carrito.map(item => item.id === product.name ? { ...item, cantidad: item.cantidad + 1, precio: unitPrice } : item);
     } else {
       carrito = [...carrito, {
         id: product.name,
         nombre: product.name,
-        precio: product.price,
-        criptomoneda: 'USDT',
+        precio: unitPrice,
+        criptomoneda: 'tSYS',
         cantidad: 1,
         imagen: '🛒'
       }];
@@ -157,7 +159,7 @@
           <div class="flex flex-col w-full">
             <div class="flex justify-between mb-2">
               <span class="text-sm font-medium">Lote: <strong class="text-white">{p.lot} KG</strong></span>
-              <span class="text-xl font-bold text-main">{p.price.toFixed(2)} USDT</span>
+              <span class="text-xl font-bold text-main">{(parseFloat(p.price) || 0.0001).toFixed(4)} tSYS</span>
             </div>
             {#if p.type === 'futuro'}
               <div class="w-full mt-2">
@@ -232,14 +234,14 @@
                 <p class="font-semibold text-white">{item.nombre}</p>
                 <p class="text-xs text-muted">Cant: {item.cantidad}</p>
               </div>
-              <p class="font-bold text-primary">{(item.precio * item.cantidad).toFixed(2)} USDT</p>
+              <p class="font-bold text-primary">{(item.precio * item.cantidad).toFixed(4)} tSYS</p>
             </div>
           {/each}
         </div>
 
         <div class="border-t border-border pt-4 mb-6 flex justify-between items-center">
           <span class="text-muted font-semibold">Subtotal:</span>
-          <span class="text-xl font-bold text-white">{cartTotal.toFixed(2)} USDT</span>
+          <span class="text-xl font-bold text-white">{cartTotal.toFixed(4)} tSYS</span>
         </div>
 
         <div class="flex gap-3">

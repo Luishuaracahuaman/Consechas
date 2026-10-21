@@ -47,7 +47,7 @@
   let chatTarget = $state(null);
   let faqOpen = $state(null);
   let profilePhoto = $state(null);
-  let fileInput;
+  let fileInput = $state();
 
   function handlePhotoUpload(event) {
     const file = event.target.files[0];
@@ -78,6 +78,9 @@
   function navigate(view) {
     mobileMenuOpen = false;
     currentView = view;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('terra_current_view', view);
+    }
     window.scrollTo(0, 0);
   }
 
@@ -86,47 +89,206 @@
     easing: cubicOut,
   });
 
-  async function connectWallet(walletName) {
-    walletModalOpen = false;
-    
-    let selectedProvider = window.ethereum;
-    
-    // Diferenciar entre MetaMask y Pali si ambos están inyectados
-    if (window.ethereum) {
-      if (window.ethereum.providers) {
-        if (walletName === 'MetaMask') {
-          selectedProvider = window.ethereum.providers.find(p => p.isMetaMask && !p.isPali) || window.ethereum;
-        } else if (walletName === 'Pali Wallet') {
-          selectedProvider = window.ethereum.providers.find(p => p.isPali) || window.pali || window.ethereum;
-        }
-      } else if (walletName === 'Pali Wallet' && window.pali) {
-        selectedProvider = window.pali;
+  let eip6963Providers = new Map();
+
+  // Escuchar proveedores EIP-6963 de inmediato a nivel de script (antes de onMount)
+  if (typeof window !== 'undefined') {
+    window.addEventListener("eip6963:announceProvider", (event) => {
+      if (event?.detail?.info && event?.detail?.provider) {
+        const { info, provider: prov } = event.detail;
+        console.log(">>> EIP-6963 Detectado:", info.name, info.rdns, prov);
+        if (info.name) eip6963Providers.set(info.name.toLowerCase(), prov);
+        if (info.rdns) eip6963Providers.set(info.rdns.toLowerCase(), prov);
+      }
+    });
+    window.dispatchEvent(new Event("eip6963:requestProvider"));
+  }
+
+  onMount(async () => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event("eip6963:requestProvider"));
+      
+      console.log("=== ESTADO DE WALLETS EN EL NAVEGADOR ===");
+      console.log("window.ethereum:", window.ethereum);
+      console.log("isMetaMask:", window.ethereum?.isMetaMask, "isPali:", window.ethereum?.isPali);
+      console.log("providers array:", window.ethereum?.providers);
+      console.log("window.pali:", window.pali);
+      console.log("eip6963Providers detectados:", Array.from(eip6963Providers.keys()));
+
+      // 1. Restaurar la última vista donde ingresó el usuario
+      const savedView = localStorage.getItem('terra_current_view');
+      if (savedView && savedView !== 'home') {
+        currentView = savedView;
       }
 
-      try {
-        provider = new ethers.BrowserProvider(selectedProvider);
-        const accounts = await provider.send("eth_requestAccounts", []);
-        account = accounts[0];
-        isWalletConnected = true;
-        showToast(`Conectado exitosamente con ${walletName}.`);
-        
-        // Escuchar cambios de cuenta sin recargar la página
-        selectedProvider.on('chainChanged', (chainId) => {
-          console.log("Red cambiada a:", chainId);
-          // Opcional: Podrías actualizar el estado currentNetwork aquí si lo deseas
-        });
-        selectedProvider.on('accountsChanged', (accounts) => {
-          if (accounts.length > 0) account = accounts[0];
-          else {
-            account = null;
-            isWalletConnected = false;
+      // 2. Restaurar sesión de wallet si ya había ingresado
+      const wasConnected = localStorage.getItem('terra_wallet_connected') === 'true';
+      const savedAccount = localStorage.getItem('terra_account');
+
+      if (wasConnected) {
+        if (window.ethereum) {
+          try {
+            const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+            if (accounts && accounts.length > 0) {
+              account = accounts[0];
+              isWalletConnected = true;
+              provider = new ethers.BrowserProvider(window.ethereum);
+            } else if (savedAccount) {
+              account = savedAccount;
+              isWalletConnected = true;
+            }
+          } catch (e) {
+            if (savedAccount) {
+              account = savedAccount;
+              isWalletConnected = true;
+            }
           }
-        });
+        } else if (savedAccount) {
+          account = savedAccount;
+          isWalletConnected = true;
+        }
+      }
+    }
+  });
+
+  let metamaskBlockedByPali = $state(false);
+
+  async function resolveProvider(walletName) {
+    if (typeof window === 'undefined') return null;
+
+    if (walletName === 'MetaMask') {
+      // 1. Detección EIP-6963 (MetaMask independiente y directo)
+      for (const [key, prov] of eip6963Providers.entries()) {
+        if (key.includes('metamask') || key.includes('io.metamask')) {
+          return prov;
+        }
+      }
+
+      // 2. Disparar solicitud EIP-6963 y esperar respuesta
+      window.dispatchEvent(new Event("eip6963:requestProvider"));
+      await new Promise(res => setTimeout(res, 250));
+
+      for (const [key, prov] of eip6963Providers.entries()) {
+        if (key.includes('metamask') || key.includes('io.metamask')) {
+          return prov;
+        }
+      }
+
+      // 3. Array de proveedores múltiples (window.ethereum.providers)
+      if (window.ethereum?.providers?.length) {
+        const found = window.ethereum.providers.find(p => (p.isMetaMask || p._metamask) && !p.isPali);
+        if (found) return found;
+      }
+
+      // 4. Objetos alternativos inyectados por extensiones
+      if (window.metamask) return window.metamask;
+      if (window.ethereumProvider?.isMetaMask && !window.ethereumProvider?.isPali) return window.ethereumProvider;
+
+      // 5. window.ethereum directo (únicamente si NO es Pali)
+      if (window.ethereum) {
+        if (window.ethereum._metamask || (!window.ethereum.isPali && window.ethereum.isMetaMask)) {
+          return window.ethereum;
+        }
+      }
+
+      return null;
+    }
+
+    if (walletName === 'Pali Wallet') {
+      // 1. Detección EIP-6963
+      for (const [key, prov] of eip6963Providers.entries()) {
+        if (key.includes('pali')) return prov;
+      }
+      // 2. window.pali directo
+      if (window.pali) return window.pali;
+      // 3. Array de proveedores múltiples
+      if (window.ethereum?.providers?.length) {
+        const found = window.ethereum.providers.find(p => p.isPali);
+        if (found) return found;
+      }
+      // 4. window.ethereum si pertenece a Pali
+      if (window.ethereum?.isPali) return window.ethereum;
+      return null;
+    }
+
+    return null;
+  }
+
+  async function connectWallet(walletName) {
+    metamaskBlockedByPali = false;
+    const selectedProvider = await resolveProvider(walletName);
+
+    if (selectedProvider) {
+      try {
+        // Invocar directamente a la extensión seleccionada para que abra su ventana de login
+        const accounts = await selectedProvider.request({ method: "eth_requestAccounts" });
+        if (accounts && accounts.length > 0) {
+          account = accounts[0];
+          provider = new ethers.BrowserProvider(selectedProvider);
+          isWalletConnected = true;
+          walletModalOpen = false;
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('terra_wallet_connected', 'true');
+            localStorage.setItem('terra_wallet_name', walletName);
+            localStorage.setItem('terra_account', account);
+          }
+          showToast(`Conectado exitosamente con ${walletName}.`);
+          
+          if (currentView === 'home') {
+            navigate('market');
+          }
+
+          if (selectedProvider.on) {
+            selectedProvider.on('chainChanged', (chainId) => {
+              console.log("Red cambiada a:", chainId);
+            });
+            selectedProvider.on('accountsChanged', (newAccounts) => {
+              if (newAccounts && newAccounts.length > 0) {
+                account = newAccounts[0];
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('terra_account', account);
+                }
+              } else {
+                confirmDisconnect();
+              }
+            });
+          }
+          return;
+        }
       } catch (error) {
-        console.error(error);
+        console.warn(`Error al conectar con ${walletName}:`, error);
+        if (error.code === 4001 || error.code === 4100) {
+          showToast(`Conexión con ${walletName} cancelada por el usuario.`, "error");
+        } else {
+          showToast(`Error al abrir ventana de ${walletName}.`, "error");
+        }
       }
     } else {
-      showToast("Por favor instala MetaMask", "error");
+      // Si MetaMask fue solicitado pero Pali Wallet lo está opacando
+      if (walletName === 'MetaMask' && (window.ethereum?.isPali || window.pali)) {
+        metamaskBlockedByPali = true;
+        showToast("Pali Wallet está activa como predeterminada y bloquea a MetaMask.", "error");
+      } else {
+        showToast(`No se detectó la extensión de ${walletName} instalada.`, "error");
+      }
+    }
+  }
+
+  function connectDemoWallet(walletName) {
+    account = walletName === 'MetaMask' 
+      ? "0x71C8366420A023c02554364946637B1a0765B42c" 
+      : "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7";
+    isWalletConnected = true;
+    walletModalOpen = false;
+    metamaskBlockedByPali = false;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('terra_wallet_connected', 'true');
+      localStorage.setItem('terra_wallet_name', walletName);
+      localStorage.setItem('terra_account', account);
+    }
+    showToast(`Conectado en modo prueba con ${walletName}.`);
+    if (currentView === 'home') {
+      navigate('market');
     }
   }
 
@@ -134,6 +296,11 @@
     isWalletConnected = false;
     account = null;
     disconnectModalOpen = false;
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('terra_wallet_connected');
+      localStorage.removeItem('terra_wallet_name');
+      localStorage.removeItem('terra_account');
+    }
     showToast("Wallet desconectada exitosamente.");
   }
 
@@ -152,7 +319,7 @@
       chainId: '0x89',
       chainName: 'Polygon Mainnet',
       shortName: 'Polygon Mainnet',
-      rpcUrls: ['https://polygon-rpc.com/'],
+      rpcUrls: ['https://polygon.llamarpc.com'],
       nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 },
       blockExplorerUrls: ['https://polygonscan.com/'],
       logo: 'https://cryptologos.cc/logos/polygon-matic-logo.svg'
@@ -215,7 +382,7 @@
       chainId: '0xaa36a7', // 11155111
       chainName: 'Sepolia',
       shortName: 'Sepolia',
-      rpcUrls: ['https://rpc.sepolia.org'],
+      rpcUrls: ['https://ethereum-sepolia-rpc.publicnode.com'],
       nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
       blockExplorerUrls: ['https://sepolia.etherscan.io'],
       logo: 'https://cryptologos.cc/logos/ethereum-classic-etc-logo.svg' // Logo verde distinto
@@ -632,10 +799,17 @@
         navigate={navigate}
         bind:carrito
         setLastOrder={(order) => lastOrder = order}
+        isWalletConnected={isWalletConnected}
+        account={account}
+        showToast={showToast}
+        currentNetwork={currentNetwork}
+        networks={networks}
+        openWalletModal={() => walletModalOpen = true}
       />
     {:else if currentView === 'tracking'}
       <TrackingView 
         lastOrder={lastOrder}
+        setLastOrder={(order) => lastOrder = order}
         navigate={navigate}
       />
     {:else if currentView === 'receipt'}
@@ -723,6 +897,23 @@
               </div>
               <div class="w-2.5 h-2.5 rounded-full bg-[#F6851B] opacity-0 group-hover:opacity-100 transition-opacity shadow-[0_0_10px_#F6851B]"></div>
             </button>
+
+            {#if metamaskBlockedByPali}
+              <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-left animate-in fade-in duration-300">
+                <p class="text-xs font-bold text-amber-400 mb-1 flex items-center gap-1.5">
+                  <span>⚠️</span> Pali Wallet está bloqueando a MetaMask
+                </p>
+                <p class="text-[11px] text-zinc-300 mb-3 leading-relaxed">
+                  Pali tiene activada la prioridad Web3 en tu navegador. Para que MetaMask pueda abrir su ventana: abre la extensión <strong>Pali ➔ Configuración ➔ Desactiva "Set as default wallet"</strong>.
+                </p>
+                <button 
+                  onclick={() => connectDemoWallet('MetaMask')} 
+                  class="w-full py-2.5 px-3 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 rounded-xl text-xs font-bold transition-all"
+                >
+                  Continuar en Modo Prueba con MetaMask →
+                </button>
+              </div>
+            {/if}
 
           </div>
         </div>
