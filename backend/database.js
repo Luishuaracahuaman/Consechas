@@ -65,6 +65,24 @@ const initializeDatabase = async () => {
       )
     `);
 
+    // Create transfers table (transferencias directas de fondos entre billeteras)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS transfers (
+        id SERIAL PRIMARY KEY,
+        tx_hash VARCHAR(255) NOT NULL,
+        from_wallet VARCHAR(255),
+        to_wallet VARCHAR(255) NOT NULL,
+        amount NUMERIC NOT NULL,
+        currency VARCHAR(50),
+        network VARCHAR(100),
+        network_key VARCHAR(50),
+        explorer_url TEXT,
+        concept TEXT DEFAULT 'Transferencia directa Web3',
+        status VARCHAR(50) DEFAULT 'confirmed',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     // Seed products if empty
     const { rows: productRows } = await pool.query('SELECT count(*) as count FROM products');
     if (parseInt(productRows[0].count) === 0) {

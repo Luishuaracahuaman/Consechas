@@ -1,6 +1,7 @@
 <script>
   import { ShoppingCart, ChevronDown, ShieldCheck, AlertCircle, Wallet, RefreshCw, ExternalLink, Copy, Check } from 'lucide-svelte';
   import { ethers } from 'ethers';
+  import { API_URL } from '../config.js';
 
   let { 
     navigate, 
@@ -305,7 +306,7 @@
           status: 'confirmed'
         };
 
-        const dbRes = await fetch('http://localhost:3000/api/orders', {
+        const dbRes = await fetch(`${API_URL}/api/orders`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(orderPayload)

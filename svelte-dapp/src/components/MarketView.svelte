@@ -1,5 +1,6 @@
 <script>
   import { MessageSquare, ShieldCheck } from 'lucide-svelte';
+  import { API_URL } from '../config.js';
 
   // Props
   let { carrito = $bindable(), navigate, showToast, setChatOpen, setChatTarget } = $props();
@@ -13,7 +14,7 @@
 
   // Fetch products from backend
   $effect(() => {
-    fetch('http://localhost:3000/api/products')
+    fetch(`${API_URL}/api/products`)
       .then(res => res.json())
       .then(data => {
         // Inicializar funding: 0 para las del productor, 65 para los datos semilla
@@ -51,7 +52,7 @@
     if (!itemToDelete) return;
     isDeleting = true;
     try {
-      const res = await fetch(`http://localhost:3000/api/products/${itemToDelete.id}`, { method: 'DELETE' });
+      const res = await fetch(`${API_URL}/api/products/${itemToDelete.id}`, { method: 'DELETE' });
       if (res.ok) {
         products = products.filter(p => p.id !== itemToDelete.id);
         showToast("Publicación eliminada correctamente.");

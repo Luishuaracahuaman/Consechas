@@ -1,9 +1,10 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const pool = require('./database.js');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -172,6 +173,70 @@ app.get('/api/orders/latest', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// Guardar nueva transferencia en Neon PostgreSQL
+app.post('/api/transfers', async (req, res) => {
+  const {
+    txHash,
+    fromWallet,
+    toWallet,
+    amount,
+    currency,
+    network,
+    networkKey,
+    explorerUrl,
+    concept,
+    status
+  } = req.body;
+
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO transfers (tx_hash, from_wallet, to_wallet, amount, currency, network, network_key, explorer_url, concept, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING *`,
+      [
+        txHash,
+        fromWallet || null,
+        toWallet,
+        parseFloat(amount) || 0,
+        currency || 'ETH',
+        network || 'Ethereum',
+        networkKey || 'sepolia',
+        explorerUrl || null,
+        concept || 'Transferencia directa Web3',
+        status || 'confirmed'
+      ]
+    );
+
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error guardando transferencia en BD:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Obtener todas las transferencias guardadas en BD
+app.get('/api/transfers', async (req, res) => {
+  try {
+    const { rows } = await pool.query("SELECT * FROM transfers ORDER BY id DESC");
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// Servir frontend compilado (Svelte DApp) para entorno Docker y Cloud
+const distPath = path.join(__dirname, '../svelte-dapp/dist');
+app.use(express.static(distPath));
+
+// Fallback SPA para rutas del frontend (no API)
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) return next();
+  res.sendFile(path.join(distPath, 'index.html'), (err) => {
+    if (err) next();
+  });
 });
 
 app.listen(PORT, () => {

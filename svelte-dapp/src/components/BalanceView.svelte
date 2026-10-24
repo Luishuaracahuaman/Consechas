@@ -3,6 +3,7 @@
   import { ethers } from 'ethers';
   import { fly, fade } from 'svelte/transition';
   import { quintOut } from 'svelte/easing';
+  import { API_URL } from '../config.js';
 
   let { account, isWalletConnected, networks = {}, currentNetwork = 'polygon', switchNetwork } = $props();
 
@@ -82,7 +83,7 @@
           // Si es localhost, usamos el backend proxy
           const isLocalRpc = rpceEndpoints[networkKey] && (rpceEndpoints[networkKey].includes('127.0.0.1') || rpceEndpoints[networkKey].includes('localhost'));
           if (isLocalRpc) {
-            const proxyRes = await fetch('http://localhost:3000/api/rpc-proxy', {
+            const proxyRes = await fetch(`${API_URL}/api/rpc-proxy`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ rpcUrl: rpceEndpoints[networkKey], method: 'eth_getBalance', params: [address, 'latest'] })

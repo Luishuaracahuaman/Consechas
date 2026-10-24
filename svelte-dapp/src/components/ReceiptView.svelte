@@ -1,5 +1,6 @@
 <script>
   import { Shield, ShieldCheck, Download, Share2, Database, CheckCircle2, ArrowLeft, ExternalLink, Printer } from 'lucide-svelte';
+  import { API_URL } from '../config.js';
 
   let { lastOrder, navigate } = $props();
 
@@ -18,7 +19,7 @@
         } catch(e){}
       }
       // 2. Si no, consultar la última orden registrada en Neon DB
-      fetch('http://localhost:3000/api/orders/latest')
+      fetch(`${API_URL}/api/orders/latest`)
         .then(r => r.ok ? r.json() : null)
         .then(data => {
           if (data) {

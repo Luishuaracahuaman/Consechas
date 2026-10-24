@@ -1,6 +1,7 @@
 <script>
   import { Star, ShieldCheck } from 'lucide-svelte';
   import LineChart from './LineChart.svelte';
+  import { API_URL } from '../config.js';
 
   let { isWalletConnected, showToast } = $props();
 
@@ -10,7 +11,7 @@
   let lotes = $state([]);
   
   $effect(() => {
-    fetch('http://localhost:3000/api/lotes')
+    fetch(`${API_URL}/api/lotes`)
       .then(res => res.json())
       .then(data => lotes = data)
       .catch(err => console.error("Error fetching lotes:", err));
@@ -49,7 +50,7 @@
     isSubmitting = true;
 
     try {
-      const res = await fetch('http://localhost:3000/api/lotes', {
+      const res = await fetch(`${API_URL}/api/lotes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form)

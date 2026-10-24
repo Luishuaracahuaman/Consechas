@@ -1,5 +1,6 @@
 <script>
   import { FileText, Star, ShieldCheck, ExternalLink, PackageCheck, Truck, RefreshCw, ChevronDown, ChevronUp } from 'lucide-svelte';
+  import { API_URL } from '../config.js';
 
   let { lastOrder, setLastOrder = () => {}, navigate } = $props();
 
@@ -76,7 +77,7 @@
   async function loadRealOrders() {
     isOrdersLoading = true;
     try {
-      const res = await fetch('http://localhost:3000/api/orders');
+      const res = await fetch(`${API_URL}/api/orders`);
       if (res.ok) {
         const data = await res.json();
         ordersHistory = data;
