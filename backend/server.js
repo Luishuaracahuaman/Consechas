@@ -231,12 +231,14 @@ app.get('/api/transfers', async (req, res) => {
 const distPath = path.join(__dirname, '../svelte-dapp/dist');
 app.use(express.static(distPath));
 
-// Fallback SPA para rutas del frontend (no API)
-app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api')) return next();
-  res.sendFile(path.join(distPath, 'index.html'), (err) => {
-    if (err) next();
-  });
+// Fallback SPA para rutas del frontend (compatible con Express 5)
+app.use((req, res, next) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api')) {
+    return res.sendFile(path.join(distPath, 'index.html'), (err) => {
+      if (err) next();
+    });
+  }
+  next();
 });
 
 app.listen(PORT, () => {
