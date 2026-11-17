@@ -29,9 +29,6 @@
   let userWalletBalance = $state(null);
   let isBalanceLoading = $state(false);
 
-  // Monto simbólico mínimo para pruebas en testnet
-  let montoBlockchain = $state("0.0001");
-
   const opcionesCripto = [
     { 
       name: 'Syscoin Testnet', 
@@ -42,6 +39,16 @@
       explorerUrl: 'https://tanenbaum.io',
       faucetUrl: 'https://faucet.tanenbaum.io',
       icon: 'https://cryptologos.cc/logos/starknet-token-strk-logo.svg' 
+    },
+    { 
+      name: 'zkSYS Testnet', 
+      symbol: 'TSYS', 
+      networkKey: 'zksys-testnet', 
+      chainId: '0xdee1', 
+      rpcUrl: 'https://rpc-zk.tanenbaum.io', 
+      explorerUrl: 'https://explorer-zk.tanenbaum.io',
+      faucetUrl: 'https://faucet-zk.tanenbaum.io',
+      icon: 'https://cryptologos.cc/logos/cosmos-atom-logo.svg' 
     },
     { 
       name: 'Polygon Mainnet', 
@@ -90,6 +97,16 @@
       icon: 'https://cryptologos.cc/logos/ethereum-eth-logo.svg' 
     },
     { 
+      name: 'Ethereum Hoodi', 
+      symbol: 'ETH', 
+      networkKey: 'hoodi', 
+      chainId: '0x88bb0', 
+      rpcUrl: 'https://0xrpc.io/hoodi', 
+      explorerUrl: 'https://light-hoodi.beaconcha.in',
+      faucetUrl: 'https://cloud.google.com/application/web3/faucet/ethereum/hoodi',
+      icon: 'https://cryptologos.cc/logos/avalanche-avax-logo.svg' 
+    },
+    { 
       name: 'Sepolia', 
       symbol: 'ETH', 
       networkKey: 'sepolia', 
@@ -124,12 +141,8 @@
 
   let totalPagar = $derived(carrito.reduce((acc, item) => acc + (parseFloat(item.precio || 0.0001) * item.cantidad), 0));
 
-  // Sincronizar automáticamente el monto de la transacción con el total de productos
-  $effect(() => {
-    if (totalPagar > 0) {
-      montoBlockchain = totalPagar.toFixed(4);
-    }
-  });
+  // Monto de transacción sincronizado automáticamente con el carrito (no editable)
+  let montoBlockchain = $derived(totalPagar > 0 ? totalPagar.toFixed(4) : "0.0001");
 
   // Consultar el saldo real en la blockchain cada vez que cambia la cuenta o moneda
   $effect(() => {
@@ -559,19 +572,19 @@
           <p class="text-[11px] text-muted">Monto mínimo para pruebas en testnet</p>
         </div>
         <div class="flex items-center gap-2">
-          <input 
-            type="text" 
-            bind:value={montoBlockchain} 
-            class="w-28 bg-dark border border-border rounded-lg px-2.5 py-1.5 text-right font-mono text-sm text-primary font-bold focus:outline-none focus:border-primary shadow-inner"
-            placeholder="0.0001"
-          />
+          <span
+            class="w-28 bg-dark border border-border rounded-lg px-2.5 py-1.5 text-right font-mono text-sm text-primary font-bold shadow-inner select-none cursor-not-allowed"
+            title="Monto calculado automáticamente según el carrito"
+          >
+            {montoBlockchain}
+          </span>
           <span class="text-xs font-bold text-white uppercase">{criptoSeleccionada.symbol}</span>
         </div>
       </div>
     </div>
 
     <!-- SELECCIÓN DE CRIPTO -->
-    <div class="mb-6 p-5 rounded-xl bg-dark/40 backdrop-blur-md border border-border shadow-lg relative">
+    <div class="mb-6 p-5 rounded-xl bg-dark/40 backdrop-blur-md border border-border shadow-lg relative z-40">
       <label for="cripto-select-btn" class="block text-sm font-medium text-muted mb-3">Pagar con:</label>
 
       <div class="relative">
@@ -579,7 +592,7 @@
           id="cripto-select-btn"
           type="button"
           onclick={() => isDropdownOpen = !isDropdownOpen}
-          class="w-full flex items-center justify-between bg-panel/40 backdrop-blur-md border border-border rounded-lg p-3 text-white hover:bg-[#2b3139] focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
+          class="w-full flex items-center justify-between bg-panel border border-border rounded-lg p-3 text-white hover:bg-[#2b3139] focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
         >
           <div class="flex items-center space-x-3">
             <img src={criptoSeleccionada.icon} alt="Logo" class="w-6 h-6 rounded-full shadow-sm bg-white" />
@@ -590,14 +603,14 @@
         </button>
 
         {#if isDropdownOpen}
-          <div class="absolute z-50 mt-2 w-full bg-panel/90 backdrop-blur-xl border border-border rounded-lg shadow-xl max-h-60 overflow-y-auto">
-            <ul class="py-1 m-0">
+          <div class="absolute z-[100] mt-2 w-full bg-panel border border-border rounded-lg shadow-2xl max-h-60 overflow-y-auto">
+            <ul class="py-1 m-0 bg-panel">
               {#each opcionesCripto as cripto}
                 <!-- svelte-ignore a11y_click_events_have_key_events -->
                 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
                 <li
                   onclick={() => { selectedNetworkKey = cripto.networkKey; isDropdownOpen = false; fetchUserBalance(); }}
-                  class="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-dark/60 transition-colors {cripto.networkKey === selectedNetworkKey ? 'bg-primary/20 text-primary font-bold' : 'text-white'}"
+                  class="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-dark transition-colors {cripto.networkKey === selectedNetworkKey ? 'bg-primary/20 text-primary font-bold' : 'text-white'}"
                 >
                   <img src={cripto.icon} alt={cripto.name} class="w-6 h-6 rounded-full bg-white p-0.5" />
                   <span class="font-medium">{cripto.name}</span>
